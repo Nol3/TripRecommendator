@@ -1,0 +1,13 @@
+# Usa una imagen base de Nginx
+FROM nginx:alpine
+
+# Crear directorio de trabajo
+WORKDIR /usr/share/nginx/html
+
+# Copiar todos los archivos de la carpeta public
+COPY ./public/ .
+
+# Exponer puerto 80
+EXPOSE 80
+
+# El comando para iniciar Nginx ya está incluido en la imagen base

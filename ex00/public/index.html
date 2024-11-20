@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TripRecommendator - Descubre tu próximo destino</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="logo">
+                <img src="assets/logo.svg" alt="TripRecommendator Logo" width="40" height="40">
+                <span>TripRecommendator</span>
+            </div>
+            <div class="nav-links">
+                <a href="/auth/github" class="btn btn-secondary">
+                    <img src="assets/github.svg" alt="GitHub" width="20" height="20">
+                    Iniciar con GitHub
+                </a>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <section class="hero">
+            <h1>Descubre tu próximo destino</h1>
+            <p>Describe tu viaje ideal y te ayudaremos a encontrar el destino perfecto</p>
+            <form id="search-form">
+                <input type="text" id="search-input" placeholder="Ej: Busco un destino con playas tranquilas y buena gastronomía..." aria-label="Buscar destino">
+                <button type="submit" class="btn btn-primary">Buscar</button>
+            </form>
+        </section>
+
+        <section id="recommendations" class="recommendations">
+            <!-- Las recomendaciones se cargarán aquí dinámicamente -->
+        </section>
+    </main>
+
+    <div id="map-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 id="modal-title"></h2>
+            <div id="map"></div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
