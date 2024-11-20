@@ -16,6 +16,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function searchWithGemini(query) {
         try {
+            const loadingIndicator = document.createElement('div');
+            loadingIndicator.className = 'loading-indicator';
+            loadingIndicator.textContent = 'Buscando destinos...';
+            recommendationsContainer.innerHTML = '';
+            recommendationsContainer.appendChild(loadingIndicator);
+
             const response = await fetch('/api/search', {
                 method: 'POST',
                 headers: {
@@ -24,10 +30,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({ query })
             });
             
-            return await response.json();
+            const data = await response.json();
+            console.log('Datos recibidos:', data); // Añadir log
+
+            if (data.error) {
+                throw new Error(data.error);
+            }
+
+            return data;
         } catch (error) {
-            console.error('Error searching:', error);
+            console.error('Error en la búsqueda:', error);
             return [];
+        } finally {
+            const loadingIndicator = recommendationsContainer.querySelector('.loading-indicator');
+            if (loadingIndicator) {
+                loadingIndicator.remove();
+            }
         }
     }
 
@@ -73,20 +91,43 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function displayRecommendations(places) {
         recommendationsContainer.innerHTML = '';
+        
+        if (!Array.isArray(places) || places.length === 0) {
+            const noResults = document.createElement('div');
+            noResults.className = 'no-results';
+            noResults.setAttribute('role', 'alert');
+            noResults.textContent = 'No se encontraron destinos. Por favor, intenta con otra búsqueda.';
+            recommendationsContainer.appendChild(noResults);
+            return;
+        }
+
+        const grid = document.createElement('div');
+        grid.className = 'recommendations-grid';
+        grid.setAttribute('role', 'list');
+
         places.forEach(place => {
-            const card = document.createElement('div');
+            const card = document.createElement('article');
             card.className = 'card';
+            card.setAttribute('role', 'listitem');
             card.innerHTML = `
-                <img src="${place.image}" alt="${place.title}">
+                <img src="${place.image}" alt="Vista de ${place.title}" loading="lazy">
                 <div class="card-content">
                     <h3>${place.title}</h3>
-                    <div class="rating">⭐ ${place.rating}</div>
+                    <div class="rating" aria-label="Valoración: ${place.rating} de 5 estrellas">
+                        ⭐ ${place.rating}
+                    </div>
                     <p>${place.description}</p>
-                    <button class="btn btn-primary show-map" data-id="${place.id}">Ver en el mapa</button>
+                    <button class="btn btn-primary show-map" 
+                            data-id="${place.id}"
+                            aria-label="Ver ${place.title} en el mapa">
+                        Ver en el mapa
+                    </button>
                 </div>
             `;
-            recommendationsContainer.appendChild(card);
+            grid.appendChild(card);
         });
+
+        recommendationsContainer.appendChild(grid);
 
         document.querySelectorAll('.show-map').forEach(button => {
             button.addEventListener('click', (e) => {
@@ -102,7 +143,11 @@ document.addEventListener('DOMContentLoaded', () => {
         modalTitle.textContent = place.title;
 
         if (!map) {
-            map = L.map('map').setView([place.lat, place.lng], 13);
+            map = L.map('map', {
+                keyboard: true,
+                zoomControl: true
+            }).setView([place.lat, place.lng], 13);
+            
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             }).addTo(map);
@@ -121,6 +166,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.addEventListener('click', (e) => {
         if (e.target === mapModal) {
+            mapModal.style.display = 'none';
+        }
+    });
+
+    // Mejorar accesibilidad del teclado
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && mapModal.style.display === 'block') {
             mapModal.style.display = 'none';
         }
     });

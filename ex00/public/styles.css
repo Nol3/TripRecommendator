@@ -28,6 +28,7 @@ header {
 }
 
 nav {
+	display: flex;
     flex-direction: column;
     gap: 1rem;
     padding: 1rem;
@@ -70,6 +71,9 @@ nav {
     text-align: center;
     padding: 4rem 1rem;
     background-color: var(--secondary-color);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 .hero h1 {
@@ -172,6 +176,74 @@ nav {
     border-radius: 50%;
 }
 
+/* Utilidades de accesibilidad */
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+}
+
+/* Mejoras mobile-first */
+.search-container {
+    display: flex;
+	align-items: center;
+    flex-direction: column;
+    gap: 1rem;
+    width: 100%;
+    max-width: 600px;
+    margin: 2rem auto 0;
+    position: relative;
+}
+
+.search-hint {
+    color: #666;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+#search-input {
+    width: 100%;
+    padding: 1rem;
+    font-size: 1rem;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    transition: border-color 0.3s ease;
+}
+
+#search-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(0, 170, 108, 0.2);
+}
+
+/* Mejoras de accesibilidad para el foco */
+a:focus,
+button:focus,
+input:focus {
+    outline: 3px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+/* Skip link para navegación por teclado */
+.skip-link {
+    position: absolute;
+    top: -40px;
+    left: 0;
+    padding: 8px;
+    background: var(--primary-color);
+    color: white;
+    z-index: 1001;
+}
+
+.skip-link:focus {
+    top: 0;
+}
+
 /* Desktop styles */
 @media (min-width: 768px) {
     nav {
@@ -198,5 +270,27 @@ nav {
     .recommendations {
         grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
         padding: 2rem;
+    }
+
+    .search-container {
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .search-container {
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+    }
+
+    #search-input {
+        flex-grow: 1;
+        margin-right: 1rem;
+    }
+
+    .search-hint {
+        position: absolute;
+        margin-top: 3.5rem;
     }
 }

@@ -9,8 +9,8 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
 </head>
 <body>
-    <header>
-        <nav>
+    <header role="banner">
+        <nav role="navigation" aria-label="Navegación principal">
             <div class="logo">
                 <img src="assets/logo.svg" alt="TripRecommendator Logo" width="40" height="40">
                 <span>TripRecommendator</span>
@@ -24,26 +24,35 @@
         </nav>
     </header>
 
-    <main>
-        <section class="hero">
-            <h1>Descubre tu próximo destino</h1>
-            <p>Describe tu viaje ideal y te ayudaremos a encontrar el destino perfecto</p>
-            <form id="search-form">
-                <input type="text" id="search-input" placeholder="Ej: Busco un destino con playas tranquilas y buena gastronomía..." aria-label="Buscar destino">
-                <button type="submit" class="btn btn-primary">Buscar</button>
+    <main role="main">
+        <section class="hero" aria-labelledby="main-heading">
+            <h1 id="main-heading">Descubre tu próximo destino</h1>
+            <p>Loguea con tu cuenta de GitHub para obtener recomendaciones personalizadas</p>
+            <form id="search-form" role="search">
+                <div class="search-container">
+                    <label for="search-input" class="visually-hidden">Buscar destino</label>
+                    <input type="text" 
+                           id="search-input" 
+                           placeholder="Ej: Busco un destino con playas tranquilas y buena gastronomía..." 
+                           aria-label="Buscar destino"
+                           aria-describedby="search-hint">
+                    <button type="submit" class="btn btn-primary" aria-label="Buscar destinos">
+                        <span class="button-text">Buscar</span>
+                    </button>
+                </div>
             </form>
         </section>
 
-        <section id="recommendations" class="recommendations">
+        <section id="recommendations" class="recommendations" aria-label="Recomendaciones de destinos">
             <!-- Las recomendaciones se cargarán aquí dinámicamente -->
         </section>
     </main>
 
-    <div id="map-modal" class="modal">
+    <div id="map-modal" class="modal" role="dialog" aria-labelledby="modal-title">
         <div class="modal-content">
-            <span class="close">&times;</span>
+            <button class="close" aria-label="Cerrar mapa">&times;</button>
             <h2 id="modal-title"></h2>
-            <div id="map"></div>
+            <div id="map" role="application" aria-label="Mapa interactivo"></div>
         </div>
     </div>
 

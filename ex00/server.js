@@ -24,6 +24,7 @@ passport.use(new GitHubStrategy({
     clientSecret: process.env.GITHUB_CLIENT_SECRET,
     callbackURL: "http://localhost:3000/auth/github/callback"
 }, (accessToken, refreshToken, profile, done) => {
+    console.log('GitHub Auth Success:', profile); // Añadir log para depuración
     return done(null, profile);
 }));
 
@@ -31,7 +32,7 @@ passport.serializeUser((user, done) => done(null, user));
 passport.deserializeUser((user, done) => done(null, user));
 
 // Gemini API setup
-const genAI = new GoogleGenerativeAI(process.env.GeminiApiKey);
+const genAI = new GoogleGenerativeAI(process.env.key);
 
 // Middleware para verificar autenticación
 const isAuthenticated = (req, res, next) => {
@@ -62,34 +63,59 @@ app.get('/auth/logout', (req, res) => {
 
 // Routes
 app.get('/auth/github', passport.authenticate('github'));
+
+// Corregir la sintaxis del callback
 app.get('/auth/github/callback', 
     passport.authenticate('github', { 
         successRedirect: '/',
-        failureRedirect: '/login' 
+        failureRedirect: '/'
     })
 );
 
 // Proteger la ruta de búsqueda
 app.post('/api/search', isAuthenticated, async (req, res) => {
     try {
-        const model = genAI.getGenerativeModel({ model: "gemini-pro" }); // Cambiado a gemini-pro
-        const prompt = `Recomienda destinos turísticos basados en: ${req.body.query}. 
-                       Responde con un array JSON que contenga objetos con: 
-                       id, title, description, image, rating, lat, lng`;
+        console.log('Búsqueda recibida:', req.body.query);
+        const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+        const prompt = `Actúa como un experto en viajes y recomienda destinos turísticos basados en: ${req.body.query}
+                       Responde SOLO con un array JSON válido (sin marcadores markdown) que contenga la siguiente estructura:
+                       [
+                         {
+                           "id": número único,
+                           "title": "nombre del destino",
+                           "description": "descripción detallada en español, máximo 150 caracteres",
+                           "image": "URL de una imagen representativa (usa placeholder si no hay imagen)",
+                           "rating": número entre 1 y 5,
+                           "lat": latitud,
+                           "lng": longitud
+                         }
+                       ]
+                       Limita la respuesta a 2 destinos máximo.
+                       Asegúrate de que las coordenadas sean precisas.`;
         
         const result = await model.generateContent(prompt);
         const response = await result.response;
         const text = response.text();
         
+        console.log('Respuesta de Gemini:', text); // Añadir log
+        
         try {
             const jsonData = JSON.parse(text);
+            console.log('JSON parseado:', jsonData); // Añadir log
+            if (!Array.isArray(jsonData)) {
+                throw new Error('La respuesta no es un array');
+            }
             res.json(jsonData);
         } catch (parseError) {
+            console.error('Error al parsear JSON:', parseError); // Añadir log
             res.json([]);
         }
     } catch (error) {
-        console.error('Error:', error);
-        res.status(500).json({ error: error.message });
+        console.error('Error detallado:', error); // Mejorar log de error
+        res.status(500).json({ 
+            error: 'Error al procesar la búsqueda',
+            details: error.message 
+        });
     }
 });
 
