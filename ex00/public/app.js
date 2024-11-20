@@ -106,11 +106,18 @@ document.addEventListener('DOMContentLoaded', () => {
         grid.setAttribute('role', 'list');
 
         places.forEach(place => {
+            const currentPlace = place; // Guardar referencia para el evento del mapa
             const card = document.createElement('article');
             card.className = 'card';
             card.setAttribute('role', 'listitem');
+            
+            const imgUrl = place.image || `https://via.placeholder.com/400x200.png?text=${encodeURIComponent(place.title)}`;
+            
             card.innerHTML = `
-                <img src="${place.image}" alt="Vista de ${place.title}" loading="lazy">
+                <img src="${imgUrl}" 
+                     alt="Vista de ${place.title}" 
+                     loading="lazy"
+                     onerror="this.onerror=null; this.src='https://via.placeholder.com/400x200.png?text=${encodeURIComponent(place.title)}'">
                 <div class="card-content">
                     <h3>${place.title}</h3>
                     <div class="rating" aria-label="Valoración: ${place.rating} de 5 estrellas">
@@ -118,24 +125,21 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                     <p>${place.description}</p>
                     <button class="btn btn-primary show-map" 
-                            data-id="${place.id}"
+                            data-lat="${place.lat}"
+                            data-lng="${place.lng}"
                             aria-label="Ver ${place.title} en el mapa">
                         Ver en el mapa
                     </button>
                 </div>
             `;
+
+            const mapButton = card.querySelector('.show-map');
+            mapButton.addEventListener('click', () => showMap(currentPlace));
+
             grid.appendChild(card);
         });
 
         recommendationsContainer.appendChild(grid);
-
-        document.querySelectorAll('.show-map').forEach(button => {
-            button.addEventListener('click', (e) => {
-                const placeId = parseInt(e.target.getAttribute('data-id'));
-                const place = places.find(p => p.id === placeId);
-                showMap(place);
-            });
-        });
     }
 
     function showMap(place) {

@@ -102,10 +102,15 @@ app.post('/api/search', isAuthenticated, async (req, res) => {
         try {
             const jsonData = JSON.parse(text);
             console.log('JSON parseado:', jsonData); // Añadir log
-            if (!Array.isArray(jsonData)) {
-                throw new Error('La respuesta no es un array');
-            }
-            res.json(jsonData);
+            
+            // Procesar y validar las imágenes
+            const processedData = jsonData.map(item => ({
+                ...item,
+                image: `https://via.placeholder.com/400x200.png?text=${encodeURIComponent(item.title)}`,
+                // Siempre usamos un placeholder para evitar problemas de CORS o imágenes rotas
+            }));
+            
+            res.json(processedData);
         } catch (parseError) {
             console.error('Error al parsear JSON:', parseError); // Añadir log
             res.json([]);
