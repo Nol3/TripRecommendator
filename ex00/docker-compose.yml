@@ -1,8 +1,7 @@
-version: '3.8'
-
 services:
   app:
     build: .
+    container_name: triprecommendator
     ports:
       - "3000:3000"
     environment:
@@ -13,10 +12,4 @@ services:
     volumes:
       - .:/app
       - /app/node_modules
-  web:
-    build: .
-    ports:
-      - "3000:80"
-    volumes:
-      - ./public:/usr/share/nginx/html
     restart: unless-stopped

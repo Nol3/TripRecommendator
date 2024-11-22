@@ -9,9 +9,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Datos de ejemplo (en una aplicación real, estos vendrían de una API)
     const places = [
-        { id: 1, title: 'Barcelona', description: 'Ciudad cosmopolita con arquitectura única', image: 'https://via.placeholder.com/400x200.png?text=Barcelona', rating: 4.8, lat: 41.3851, lng: 2.1734 },
-        { id: 2, title: 'Madrid', description: 'Capital cultural con museos de clase mundial', image: 'https://via.placeholder.com/400x200.png?text=Madrid', rating: 4.7, lat: 40.4168, lng: -3.7038 },
-        { id: 3, title: 'Valencia', description: 'Ciudad de las artes y las ciencias', image: 'https://via.placeholder.com/400x200.png?text=Valencia', rating: 4.6, lat: 39.4699, lng: -0.3763 }
+        { id: 1, title: 'Barcelona', description: 'Ciudad cosmopolita con arquitectura única', image: './assets/barcelona.jpg', rating: 4.8, lat: 41.3851, lng: 2.1734 },
+        { id: 2, title: 'Madrid', description: 'Capital cultural con museos de clase mundial', image: './assets/madrid.jpg', rating: 4.7, lat: 40.4168, lng: -3.7038 },
+        { id: 3, title: 'Valencia', description: 'Ciudad de las artes y las ciencias', image: './assets/valencia.jpg', rating: 4.6, lat: 39.4699, lng: -0.3763 }
     ];
 
     async function searchWithGemini(query) {
@@ -111,13 +111,16 @@ document.addEventListener('DOMContentLoaded', () => {
             card.className = 'card';
             card.setAttribute('role', 'listitem');
             
-            const imgUrl = place.image || `https://via.placeholder.com/400x200.png?text=${encodeURIComponent(place.title)}`;
+            // Mejorar el manejo de fallback de imágenes
+            const fallbackImage = `https://picsum.photos/400/200?random=${place.id}`;
+            const imgUrl = place.image || fallbackImage;
             
             card.innerHTML = `
                 <img src="${imgUrl}" 
                      alt="Vista de ${place.title}" 
                      loading="lazy"
-                     onerror="this.onerror=null; this.src='https://via.placeholder.com/400x200.png?text=${encodeURIComponent(place.title)}'">
+                     onerror="this.src='${fallbackImage}'"
+                     class="card-image">
                 <div class="card-content">
                     <h3>${place.title}</h3>
                     <div class="rating" aria-label="Valoración: ${place.rating} de 5 estrellas">

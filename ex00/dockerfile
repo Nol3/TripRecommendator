@@ -1,13 +1,21 @@
-# Usa una imagen base de Nginx
-FROM nginx:alpine
+FROM node:18-alpine
 
-# Crear directorio de trabajo
-WORKDIR /usr/share/nginx/html
+WORKDIR /app
 
-# Copiar todos los archivos de la carpeta public
-COPY ./public/ .
+# Copiar package.json primero
+COPY package*.json ./
 
-# Exponer puerto 80
-EXPOSE 80
+# Instalar dependencias
+RUN npm install
 
-# El comando para iniciar Nginx ya está incluido en la imagen base
+# Copiar todos los archivos
+COPY . .
+
+# Asegurarse que la carpeta public existe y tiene los permisos correctos
+RUN mkdir -p public && chmod -R 755 public
+
+# Exponer puerto 3000
+EXPOSE 3000
+
+# Comando para iniciar la aplicación
+CMD ["node", "server.js"]

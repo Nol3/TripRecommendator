@@ -4,12 +4,17 @@ const passport = require('passport');
 const GitHubStrategy = require('passport-github2').Strategy;
 const session = require('express-session');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
+const path = require('path');
 
 const app = express();
 const port = process.env.PORT || 3000;
 
 app.use(express.json());
-app.use(express.static('public'));
+app.use((req, res, next) => {
+    res.header('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    next();
+});
+app.use(express.static(path.join(__dirname, 'public')));
 app.use(session({ 
     secret: 'your-secret-key', 
     resave: false, 
@@ -84,7 +89,7 @@ app.post('/api/search', isAuthenticated, async (req, res) => {
                            "id": número único,
                            "title": "nombre del destino",
                            "description": "descripción detallada en español, máximo 150 caracteres",
-                           "image": "URL de una imagen representativa (usa placeholder si no hay imagen)",
+                           "image": "URL de una imagen representativa que no sea de wikimedia (usa placeholder si no hay imagen)",
                            "rating": número entre 1 y 5,
                            "lat": latitud,
                            "lng": longitud
@@ -101,13 +106,45 @@ app.post('/api/search', isAuthenticated, async (req, res) => {
         
         try {
             const jsonData = JSON.parse(text);
-            console.log('JSON parseado:', jsonData); // Añadir log
             
-            // Procesar y validar las imágenes
-            const processedData = jsonData.map(item => ({
-                ...item,
-                image: `https://via.placeholder.com/400x200.png?text=${encodeURIComponent(item.title)}`,
-                // Siempre usamos un placeholder para evitar problemas de CORS o imágenes rotas
+            const processedData = await Promise.all(jsonData.map(async item => {
+                try {
+                    // Usar solo el título del lugar para la búsqueda
+                    const searchQuery = item.title;
+                    console.log('Búsqueda en Unsplash:', searchQuery);
+
+                    const unsplashResponse = await fetch(
+                        `https://api.unsplash.com/search/photos?query=${encodeURIComponent(searchQuery)}&client_id=${process.env.UNSPLASH_ACCESS_KEY}`,
+                        { 
+                            headers: { 
+                                'Accept-Version': 'v1',
+                                'Authorization': `Client-ID ${process.env.UNSPLASH_ACCESS_KEY}`
+                            }
+                        }
+                    );
+                    
+                    if (!unsplashResponse.ok) {
+                        throw new Error(`Unsplash API error: ${unsplashResponse.statusText}`);
+                    }
+                    
+                    const unsplashData = await unsplashResponse.json();
+                    console.log('Respuesta de Unsplash:', unsplashData); // Debug
+                    
+                    const imageUrl = unsplashData.results[0]?.urls?.regular;
+                    
+                    return {
+                        ...item,
+                        // Usar la imagen de Unsplash o mantener la URL original de Gemini como fallback
+                        image: imageUrl || item.image || `https://source.unsplash.com/800x600/?${encodeURIComponent(item.title)}`
+                    };
+                } catch (imgError) {
+                    console.error('Error fetching image for', item.title, imgError);
+                    // Mantener la imagen original de Gemini si existe
+                    return {
+                        ...item,
+                        image: item.image || `https://source.unsplash.com/800x600/?${encodeURIComponent(item.title)}`
+                    };
+                }
             }));
             
             res.json(processedData);
