@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 },
                 body: JSON.stringify({ query })
             });
-            
+
             const data = await response.json();
             console.log('Datos recibidos:', data); // Añadir log
 
@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await fetch('/api/auth/status');
             const data = await response.json();
-            
+
             const navLinks = document.querySelector('.nav-links');
             if (data.authenticated) {
                 navLinks.innerHTML = `
@@ -62,12 +62,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         ${data.user.photo ? `<img src="${data.user.photo}" alt="Profile" class="profile-pic">` : ''}
                         ${data.user.displayName || data.user.username}
                     </span>
-                    <a href="/auth/logout" class="btn btn-secondary">Cerrar sesión</a>
+                    <a href="/api/auth/logout" class="btn btn-secondary">Cerrar sesión</a>
                 `;
                 searchForm.style.display = 'flex';
             } else {
                 navLinks.innerHTML = `
-                    <a href="/auth/github" class="btn btn-secondary">
+                    <a href="/api/auth/github" class="btn btn-secondary">
                         <img src="assets/github.svg" alt="GitHub" width="20" height="20">
                         Iniciar con GitHub
                     </a>
@@ -91,7 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function displayRecommendations(places) {
         recommendationsContainer.innerHTML = '';
-        
+
         if (!Array.isArray(places) || places.length === 0) {
             const noResults = document.createElement('div');
             noResults.className = 'no-results';
@@ -110,14 +110,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const card = document.createElement('article');
             card.className = 'card';
             card.setAttribute('role', 'listitem');
-            
+
             // Mejorar el manejo de fallback de imágenes
             const fallbackImage = `https://picsum.photos/400/200?random=${place.id}`;
             const imgUrl = place.image || fallbackImage;
-            
+
             card.innerHTML = `
-                <img src="${imgUrl}" 
-                     alt="Vista de ${place.title}" 
+                <img src="${imgUrl}"
+                     alt="Vista de ${place.title}"
                      loading="lazy"
                      onerror="this.src='${fallbackImage}'"
                      class="card-image">
@@ -127,7 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         ⭐ ${place.rating}
                     </div>
                     <p>${place.description}</p>
-                    <button class="btn btn-primary show-map" 
+                    <button class="btn btn-primary show-map"
                             data-lat="${place.lat}"
                             data-lng="${place.lng}"
                             aria-label="Ver ${place.title} en el mapa">
@@ -154,7 +154,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 keyboard: true,
                 zoomControl: true
             }).setView([place.lat, place.lng], 13);
-            
+
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             }).addTo(map);
