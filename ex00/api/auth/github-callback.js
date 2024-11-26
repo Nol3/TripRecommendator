@@ -40,8 +40,19 @@ module.exports = async (req, res) => {
             req.session.isAuthenticated = true;
         }
 
-        // Crear una cookie de sesión
-        res.setHeader('Set-Cookie', `auth=${tokenData.access_token}; Path=/; HttpOnly; SameSite=Lax`);
+        // Modificar las cookies y headers de sesión
+        const cookieOptions = {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 24 * 60 * 60 * 1000, // 24 horas
+            path: '/'
+        };
+
+        res.setHeader('Set-Cookie', [
+            `auth=${tokenData.access_token}; ${Object.entries(cookieOptions).map(([k, v]) => `${k}=${v}`).join('; ')}`,
+            `userId=${userData.id}; ${Object.entries(cookieOptions).map(([k, v]) => `${k}=${v}`).join('; ')}`
+        ]);
 
         // Redirigir con los datos del usuario
         res.redirect(`/?login=success&user=${encodeURIComponent(JSON.stringify(userData))}`);

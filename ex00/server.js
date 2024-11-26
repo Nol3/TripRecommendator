@@ -18,7 +18,12 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(session({
     secret: 'your-secret-key',
     resave: false,
-    saveUninitialized: false
+    saveUninitialized: false,
+    cookie: {
+        secure: process.env.NODE_ENV === 'production',
+        httpOnly: true,
+        maxAge: 24 * 60 * 60 * 1000 // 24 horas
+    }
 }));
 app.use(passport.initialize());
 app.use(passport.session());
@@ -47,7 +52,7 @@ const isAuthenticated = (req, res, next) => {
     if (req.isAuthenticated()) {
         return next();
     }
-    res.redirect('/');
+    res.status(401).json({ error: 'No autenticado' });
 };
 
 // Actualizar la ruta de estado de autenticación
