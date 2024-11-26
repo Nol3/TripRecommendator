@@ -1,16 +1,27 @@
-
 {
   "version": 2,
   "builds": [
     {
       "src": "server.js",
       "use": "@vercel/node"
+    },
+    {
+      "src": "api/**/*.js",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
     {
-      "src": "/api/auth/(.*)",
-      "dest": "/api/auth/$1"
+      "src": "/api/auth/github",
+      "dest": "/api/auth/github.js"
+    },
+    {
+      "src": "/api/auth/github-callback",
+      "dest": "/api/auth/github-callback.js"
+    },
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/$1"
     },
     {
       "src": "/(.*)",
