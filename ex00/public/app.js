@@ -52,6 +52,29 @@ document.addEventListener('DOMContentLoaded', () => {
     // Verificar estado de autenticación
     async function checkAuthStatus() {
         try {
+            // Verificar si hay parámetros de login en la URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const loginStatus = urlParams.get('login');
+            const userData = urlParams.get('user');
+
+            if (loginStatus === 'success' && userData) {
+                // Procesar datos del usuario recibidos
+                const user = JSON.parse(decodeURIComponent(userData));
+                const navLinks = document.querySelector('.nav-links');
+                navLinks.innerHTML = `
+                    <span class="user-info">
+                        ${user.avatar_url ? `<img src="${user.avatar_url}" alt="Profile" class="profile-pic">` : ''}
+                        ${user.name || user.login}
+                    </span>
+                    <a href="/api/auth/logout" class="btn btn-secondary">Cerrar sesión</a>
+                `;
+                searchForm.style.display = 'flex';
+                // Limpiar URL
+                window.history.replaceState({}, document.title, '/');
+                return;
+            }
+
+            // Si no hay parámetros, verificar estado con el servidor
             const response = await fetch('/api/auth/status');
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);

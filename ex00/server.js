@@ -50,15 +50,14 @@ const isAuthenticated = (req, res, next) => {
     res.redirect('/');
 };
 
-// Ruta para verificar el estado de autenticación
+// Actualizar la ruta de estado de autenticación
 app.get('/api/auth/status', (req, res) => {
+    const authCookie = req.cookies?.auth;
+    const sessionUser = req.session?.user;
+
     res.json({
-        authenticated: req.isAuthenticated(),
-        user: req.user ? {
-            username: req.user.username,
-            displayName: req.user.displayName,
-            photo: req.user.photos?.[0]?.value
-        } : null
+        authenticated: Boolean(authCookie || sessionUser),
+        user: sessionUser || null
     });
 });
 

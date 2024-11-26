@@ -8,8 +8,8 @@ module.exports = async (req, res) => {
             return res.status(400).json({ error: 'No code provided' });
         }
 
-        // Intercambiar código por token de acceso
-        const response = await fetch('https://github.com/login/oauth/access_token', {
+        // Obtener token de acceso
+        const tokenResponse = await fetch('https://github.com/login/oauth/access_token', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -18,31 +18,35 @@ module.exports = async (req, res) => {
             body: JSON.stringify({
                 client_id: process.env.GITHUB_CLIENT_ID,
                 client_secret: process.env.GITHUB_CLIENT_SECRET,
-                code: code,
-                redirect_uri: process.env.CALLBACK_URL
+                code: code
             })
         });
 
-        const data = await response.json();
+        const tokenData = await tokenResponse.json();
 
-        if (data.error) {
-            throw new Error(data.error);
-        }
-
-        // Obtener información del usuario
+        // Obtener datos del usuario
         const userResponse = await fetch('https://api.github.com/user', {
             headers: {
-                'Authorization': `Bearer ${data.access_token}`,
+                'Authorization': `Bearer ${tokenData.access_token}`,
                 'Accept': 'application/json',
             }
         });
 
         const userData = await userResponse.json();
 
-        // Redirigir al frontend con éxito
-        res.redirect('/?login=success');
+        // Guardar datos en la sesión
+        if (req.session) {
+            req.session.user = userData;
+            req.session.isAuthenticated = true;
+        }
+
+        // Crear una cookie de sesión
+        res.setHeader('Set-Cookie', `auth=${tokenData.access_token}; Path=/; HttpOnly; SameSite=Lax`);
+
+        // Redirigir con los datos del usuario
+        res.redirect(`/?login=success&user=${encodeURIComponent(JSON.stringify(userData))}`);
     } catch (error) {
         console.error('Error in callback:', error);
         res.redirect('/?error=auth_failed');
     }
-}
+};
