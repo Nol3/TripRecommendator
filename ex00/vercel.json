@@ -20,6 +20,14 @@
       "dest": "/api/auth/github-callback.js"
     },
     {
+      "src": "/api/auth/status",
+      "dest": "/server.js"
+    },
+    {
+      "src": "/api/auth/logout",
+      "dest": "/server.js"
+    },
+    {
       "src": "/api/(.*)",
       "dest": "/api/$1"
     },
@@ -27,5 +35,8 @@
       "src": "/(.*)",
       "dest": "/server.js"
     }
-  ]
+  ],
+  "env": {
+    "NODE_ENV": "production"
+  }
 }

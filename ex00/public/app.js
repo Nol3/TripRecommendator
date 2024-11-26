@@ -53,14 +53,17 @@ document.addEventListener('DOMContentLoaded', () => {
     async function checkAuthStatus() {
         try {
             const response = await fetch('/api/auth/status');
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
             const data = await response.json();
 
             const navLinks = document.querySelector('.nav-links');
             if (data.authenticated) {
                 navLinks.innerHTML = `
                     <span class="user-info">
-                        ${data.user.photo ? `<img src="${data.user.photo}" alt="Profile" class="profile-pic">` : ''}
-                        ${data.user.displayName || data.user.username}
+                        ${data.user?.photo ? `<img src="${data.user.photo}" alt="Profile" class="profile-pic">` : ''}
+                        ${data.user?.displayName || data.user?.username || 'Usuario'}
                     </span>
                     <a href="/api/auth/logout" class="btn btn-secondary">Cerrar sesión</a>
                 `;
@@ -76,6 +79,15 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (error) {
             console.error('Error checking auth status:', error);
+            // Mostrar estado no autenticado por defecto
+            const navLinks = document.querySelector('.nav-links');
+            navLinks.innerHTML = `
+                <a href="/api/auth/github" class="btn btn-secondary">
+                    <img src="assets/github.svg" alt="GitHub" width="20" height="20">
+                    Iniciar con GitHub
+                </a>
+            `;
+            searchForm.style.display = 'none';
         }
     }
 
