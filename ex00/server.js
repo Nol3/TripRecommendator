@@ -15,19 +15,23 @@ app.use((req, res, next) => {
     next();
 });
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(session({ 
-    secret: 'your-secret-key', 
-    resave: false, 
-    saveUninitialized: false 
+app.use(session({
+    secret: 'your-secret-key',
+    resave: false,
+    saveUninitialized: false
 }));
 app.use(passport.initialize());
 app.use(passport.session());
 
 // GitHub OAuth configuration
+const CALLBACK_URL = process.env.NODE_ENV === 'production'
+  ? 'https://trip-recommendator-two.vercel.app/auth/github/callback'
+  : 'http://localhost:3000/auth/github/callback';
+
 passport.use(new GitHubStrategy({
     clientID: process.env.GITHUB_CLIENT_ID,
     clientSecret: process.env.GITHUB_CLIENT_SECRET,
-    callbackURL: "http://localhost:3000/auth/github/callback"
+    callbackURL: CALLBACK_URL
 }, (accessToken, refreshToken, profile, done) => {
     console.log('GitHub Auth Success:', profile); // Añadir log para depuración
     return done(null, profile);
@@ -70,8 +74,8 @@ app.get('/auth/logout', (req, res) => {
 app.get('/auth/github', passport.authenticate('github'));
 
 // Corregir la sintaxis del callback
-app.get('/auth/github/callback', 
-    passport.authenticate('github', { 
+app.get('/auth/github/callback',
+    passport.authenticate('github', {
         successRedirect: '/',
         failureRedirect: '/'
     })
@@ -97,16 +101,16 @@ app.post('/api/search', isAuthenticated, async (req, res) => {
                        ]
                        Limita la respuesta a 2 destinos máximo.
                        Asegúrate de que las coordenadas sean precisas.`;
-        
+
         const result = await model.generateContent(prompt);
         const response = await result.response;
         const text = response.text();
-        
+
         console.log('Respuesta de Gemini:', text); // Añadir log
-        
+
         try {
             const jsonData = JSON.parse(text);
-            
+
             const processedData = await Promise.all(jsonData.map(async item => {
                 try {
                     // Usar solo el título del lugar para la búsqueda
@@ -115,23 +119,23 @@ app.post('/api/search', isAuthenticated, async (req, res) => {
 
                     const unsplashResponse = await fetch(
                         `https://api.unsplash.com/search/photos?query=${encodeURIComponent(searchQuery)}&client_id=${process.env.UNSPLASH_ACCESS_KEY}`,
-                        { 
-                            headers: { 
+                        {
+                            headers: {
                                 'Accept-Version': 'v1',
                                 'Authorization': `Client-ID ${process.env.UNSPLASH_ACCESS_KEY}`
                             }
                         }
                     );
-                    
+
                     if (!unsplashResponse.ok) {
                         throw new Error(`Unsplash API error: ${unsplashResponse.statusText}`);
                     }
-                    
+
                     const unsplashData = await unsplashResponse.json();
                     console.log('Respuesta de Unsplash:', unsplashData); // Debug
-                    
+
                     const imageUrl = unsplashData.results[0]?.urls?.regular;
-                    
+
                     return {
                         ...item,
                         // Usar la imagen de Unsplash o mantener la URL original de Gemini como fallback
@@ -146,7 +150,7 @@ app.post('/api/search', isAuthenticated, async (req, res) => {
                     };
                 }
             }));
-            
+
             res.json(processedData);
         } catch (parseError) {
             console.error('Error al parsear JSON:', parseError); // Añadir log
@@ -154,9 +158,9 @@ app.post('/api/search', isAuthenticated, async (req, res) => {
         }
     } catch (error) {
         console.error('Error detallado:', error); // Mejorar log de error
-        res.status(500).json({ 
+        res.status(500).json({
             error: 'Error al procesar la búsqueda',
-            details: error.message 
+            details: error.message
         });
     }
 });
