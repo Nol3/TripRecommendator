@@ -115,7 +115,37 @@ app.post('/api/search', async (req, res) => {
 
         try {
             const jsonData = JSON.parse(text);
-            res.json(jsonData);
+
+            // Procesar las imágenes para cada lugar
+            const processedData = await Promise.all(jsonData.map(async (place) => {
+                try {
+                    const unsplashResponse = await fetch(
+                        `https://api.unsplash.com/search/photos?query=${encodeURIComponent(place.title)}&client_id=${process.env.UNSPLASH_ACCESS_KEY}`,
+                        {
+                            headers: {
+                                'Accept-Version': 'v1'
+                            }
+                        }
+                    );
+
+                    if (!unsplashResponse.ok) {
+                        throw new Error('Error fetching from Unsplash');
+                    }
+
+                    const unsplashData = await unsplashResponse.json();
+                    const imageUrl = unsplashData.results[0]?.urls?.regular;
+
+                    return {
+                        ...place,
+                        image: imageUrl || `https://source.unsplash.com/800x600/?${encodeURIComponent(place.title)}`
+                    };
+                } catch (error) {
+                    console.error('Error fetching image:', error);
+                    return place;
+                }
+            }));
+
+            res.json(processedData);
         } catch (parseError) {
             console.error('Error al parsear JSON:', parseError);
             res.status(500).json({ error: 'Error al procesar la respuesta' });
