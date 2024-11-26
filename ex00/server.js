@@ -25,7 +25,7 @@ app.use(passport.session());
 
 // GitHub OAuth configuration
 const CALLBACK_URL = process.env.NODE_ENV === 'production'
-  ? 'https://trip-recommendator-two.vercel.app/auth/github/callback'
+  ? 'https://trip-recommendator-two.vercel.app/api/auth/github/callback'
   : 'http://localhost:3000/auth/github/callback';
 
 passport.use(new GitHubStrategy({
@@ -71,10 +71,9 @@ app.get('/auth/logout', (req, res) => {
 });
 
 // Routes
-app.get('/auth/github', passport.authenticate('github'));
+app.get('/api/auth/github', passport.authenticate('github'));
 
-// Corregir la sintaxis del callback
-app.get('/auth/github/callback',
+app.get('/api/auth/github/callback',
     passport.authenticate('github', {
         successRedirect: '/',
         failureRedirect: '/'
@@ -166,5 +165,4 @@ app.post('/api/search', isAuthenticated, async (req, res) => {
 });
 
 app.listen(port, () => {
-    console.log(`Server running on port ${port}`);
-});
+    console.log(`Server running on port ${port}`
