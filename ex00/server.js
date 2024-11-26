@@ -83,87 +83,46 @@ app.get('/api/auth/github/callback',
     })
 );
 
-// Proteger la ruta de búsqueda
-app.post('/api/search', isAuthenticated, async (req, res) => {
+// Modificar la ruta de búsqueda
+app.post('/api/search', async (req, res) => {
     try {
-        console.log('Búsqueda recibida:', req.body.query);
+        if (!req.body.query) {
+            return res.status(400).json({ error: 'Query is required' });
+        }
+
         const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-        const prompt = `Actúa como un experto en viajes y recomienda destinos turísticos basados en: ${req.body.query}
-                       Responde SOLO con un array JSON válido (sin marcadores markdown) que contenga la siguiente estructura:
+
+        const prompt = `Como experto en viajes, recomiéndame lugares específicos para visitar en: ${req.body.query}
+                       Responde en formato JSON como este ejemplo:
                        [
                          {
-                           "id": número único,
-                           "title": "nombre del destino",
-                           "description": "descripción detallada en español, máximo 150 caracteres",
-                           "image": "URL de una imagen representativa que no sea de wikimedia (usa placeholder si no hay imagen)",
-                           "rating": número entre 1 y 5,
-                           "lat": latitud,
-                           "lng": longitud
+                           "id": 1,
+                           "title": "Nombre del lugar",
+                           "description": "Breve descripción del lugar (máximo 150 caracteres)",
+                           "rating": 4.5,
+                           "lat": 41.3851,
+                           "lng": 2.1734
                          }
                        ]
-                       Limita la respuesta a 2 destinos máximo.
-                       Asegúrate de que las coordenadas sean precisas.`;
+                       Incluye exactamente 3 lugares. Asegúrate de que las coordenadas sean precisas.
+                       IMPORTANTE: Responde SOLO con el JSON, sin texto adicional.`;
 
         const result = await model.generateContent(prompt);
         const response = await result.response;
         const text = response.text();
 
-        console.log('Respuesta de Gemini:', text); // Añadir log
+        console.log('Respuesta de Gemini:', text);
 
         try {
             const jsonData = JSON.parse(text);
-
-            const processedData = await Promise.all(jsonData.map(async item => {
-                try {
-                    // Usar solo el título del lugar para la búsqueda
-                    const searchQuery = item.title;
-                    console.log('Búsqueda en Unsplash:', searchQuery);
-
-                    const unsplashResponse = await fetch(
-                        `https://api.unsplash.com/search/photos?query=${encodeURIComponent(searchQuery)}&client_id=${process.env.UNSPLASH_ACCESS_KEY}`,
-                        {
-                            headers: {
-                                'Accept-Version': 'v1',
-                                'Authorization': `Client-ID ${process.env.UNSPLASH_ACCESS_KEY}`
-                            }
-                        }
-                    );
-
-                    if (!unsplashResponse.ok) {
-                        throw new Error(`Unsplash API error: ${unsplashResponse.statusText}`);
-                    }
-
-                    const unsplashData = await unsplashResponse.json();
-                    console.log('Respuesta de Unsplash:', unsplashData); // Debug
-
-                    const imageUrl = unsplashData.results[0]?.urls?.regular;
-
-                    return {
-                        ...item,
-                        // Usar la imagen de Unsplash o mantener la URL original de Gemini como fallback
-                        image: imageUrl || item.image || `https://source.unsplash.com/800x600/?${encodeURIComponent(item.title)}`
-                    };
-                } catch (imgError) {
-                    console.error('Error fetching image for', item.title, imgError);
-                    // Mantener la imagen original de Gemini si existe
-                    return {
-                        ...item,
-                        image: item.image || `https://source.unsplash.com/800x600/?${encodeURIComponent(item.title)}`
-                    };
-                }
-            }));
-
-            res.json(processedData);
+            res.json(jsonData);
         } catch (parseError) {
-            console.error('Error al parsear JSON:', parseError); // Añadir log
-            res.json([]);
+            console.error('Error al parsear JSON:', parseError);
+            res.status(500).json({ error: 'Error al procesar la respuesta' });
         }
     } catch (error) {
-        console.error('Error detallado:', error); // Mejorar log de error
-        res.status(500).json({
-            error: 'Error al procesar la búsqueda',
-            details: error.message
-        });
+        console.error('Error en búsqueda:', error);
+        res.status(500).json({ error: 'Error al procesar la búsqueda' });
     }
 });
 

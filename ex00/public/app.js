@@ -16,9 +16,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function searchWithGemini(query) {
         try {
+            // Mostrar indicador de carga
             const loadingIndicator = document.createElement('div');
             loadingIndicator.className = 'loading-indicator';
-            loadingIndicator.textContent = 'Buscando destinos...';
+            loadingIndicator.textContent = 'Buscando lugares...';
             recommendationsContainer.innerHTML = '';
             recommendationsContainer.appendChild(loadingIndicator);
 
@@ -26,27 +27,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Accept': 'application/json'
                 },
-                credentials: 'include', // Importante: incluir credenciales
                 body: JSON.stringify({ query })
             });
 
             if (!response.ok) {
-                if (response.status === 401) {
-                    // Si no está autenticado, redirigir al login
-                    window.location.href = '/api/auth/github';
-                    return [];
-                }
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            const contentType = response.headers.get('content-type');
-            if (!contentType || !contentType.includes('application/json')) {
-                throw new Error('Respuesta no válida del servidor');
-            }
-
             const data = await response.json();
+            console.log('Datos recibidos:', data);
+
             if (data.error) {
                 throw new Error(data.error);
             }
@@ -54,11 +45,14 @@ document.addEventListener('DOMContentLoaded', () => {
             return data;
         } catch (error) {
             console.error('Error en la búsqueda:', error);
-            if (error.message.includes('No autenticado')) {
-                window.location.href = '/api/auth/github';
-            }
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.textContent = 'Hubo un error al buscar lugares. Por favor, intenta de nuevo.';
+            recommendationsContainer.innerHTML = '';
+            recommendationsContainer.appendChild(errorDiv);
             return [];
         } finally {
+            // Remover indicador de carga
             const loadingIndicator = recommendationsContainer.querySelector('.loading-indicator');
             if (loadingIndicator) {
                 loadingIndicator.remove();

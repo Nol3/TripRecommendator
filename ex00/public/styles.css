@@ -130,7 +130,7 @@ nav {
     padding: 0 1rem;
 }
 
-#search-input, 
+#search-input,
 #search-form button {
     width: 100%;
     border-radius: 4px;
@@ -372,5 +372,20 @@ input:focus {
         position: absolute;
         margin-top: 3.5rem;
     }
+}
+
+.loading-indicator {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-secondary);
+}
+
+.error-message {
+    text-align: center;
+    padding: 2rem;
+    color: #dc2626;
+    background-color: #fee2e2;
+    border-radius: 0.5rem;
+    margin: 1rem;
 }
 
