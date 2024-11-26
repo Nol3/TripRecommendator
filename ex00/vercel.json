@@ -10,31 +10,13 @@
       "use": "@vercel/node"
     }
   ],
-  "routes": [
-    {
-      "src": "/api/auth/github",
-      "dest": "/api/auth/github.js"
-    },
-    {
-      "src": "/api/auth/github-callback",
-      "dest": "/api/auth/github-callback.js"
-    },
-    {
-      "src": "/api/auth/status",
-      "dest": "/server.js"
-    },
-    {
-      "src": "/api/auth/logout",
-      "dest": "/server.js"
-    },
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/server.js"
-    }
+  "rewrites": [
+    { "source": "/api/auth/github", "destination": "/api/auth/github.js" },
+    { "source": "/api/auth/github-callback", "destination": "/api/auth/github-callback.js" },
+    { "source": "/api/auth/status", "destination": "/server.js" },
+    { "source": "/api/auth/logout", "destination": "/server.js" },
+    { "source": "/api/(.*)", "destination": "/api/$1" },
+    { "source": "/(.*)", "destination": "/server.js" }
   ],
   "env": {
     "NODE_ENV": "production"
