@@ -24,14 +24,13 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 // GitHub OAuth configuration
-const CALLBACK_URL = process.env.NODE_ENV === 'production'
-  ? 'https://trip-recommendator-two.vercel.app/api/auth/github-callback'
-  : 'http://localhost:3000/api/auth/github/callback';
+const CALLBACK_URL = process.env.CALLBACK_URL || 'http://localhost:3000/api/auth/github-callback';
 
 passport.use(new GitHubStrategy({
     clientID: process.env.GITHUB_CLIENT_ID,
     clientSecret: process.env.GITHUB_CLIENT_SECRET,
-    callbackURL: CALLBACK_URL
+    callbackURL: CALLBACK_URL,
+    proxy: true
 }, (accessToken, refreshToken, profile, done) => {
     console.log('GitHub Auth Success:', profile); // Añadir log para depuración
     return done(null, profile);
