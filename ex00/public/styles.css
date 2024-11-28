@@ -35,6 +35,7 @@ header {
     position: sticky;
     top: 0;
     z-index: 1000;
+    border-radius: 25px;
 }
 
 nav {
@@ -42,10 +43,10 @@ nav {
     display: flex;
     justify-content: space-around;
     align-items: center;
-    max-width: 1280px;
+    max-width: auto;
     margin: 5px;
     padding: 0 1rem;
-    border-radius: 25px;
+
 }
 
 .logo {
@@ -328,7 +329,7 @@ input:focus {
 @media (min-width: 768px) {
     nav {
         flex-direction: row;
-        justify-content: space-around;
+        justify-content: space-between;
     }
 
     #search-form {
@@ -376,7 +377,7 @@ input:focus {
     }
 }
 
-@media (min-width: 425px) {
+@media (max-width: 425px) {
     .logo-text {
         display: none;
     }
