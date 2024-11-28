@@ -15,6 +15,7 @@ app.use((req, res, next) => {
     next();
 });
 app.use(express.static(path.join(__dirname, 'public')));
+//establecer una sesion para el usuario de 24h por cookie
 app.use(session({
     secret: 'your-secret-key',
     resave: false,
@@ -22,13 +23,12 @@ app.use(session({
     cookie: {
         secure: process.env.NODE_ENV === 'production',
         httpOnly: true,
-        maxAge: 24 * 60 * 60 * 1000 // 24 horas
+        maxAge: 24 * 60 * 60 * 1000 
     }
 }));
 app.use(passport.initialize());
 app.use(passport.session());
 
-// GitHub OAuth configuration
 const CALLBACK_URL = process.env.CALLBACK_URL;
 
 passport.use(new GitHubStrategy({
@@ -37,17 +37,15 @@ passport.use(new GitHubStrategy({
     callbackURL: CALLBACK_URL,
     proxy: true
 }, (accessToken, refreshToken, profile, done) => {
-    console.log('GitHub Auth Success:', profile); // Añadir log para depuración
+    console.log('GitHub Auth Success:', profile);
     return done(null, profile);
 }));
 
 passport.serializeUser((user, done) => done(null, user));
 passport.deserializeUser((user, done) => done(null, user));
 
-// Gemini API setup
 const genAI = new GoogleGenerativeAI(process.env.key);
 
-// Middleware para verificar autenticación
 const isAuthenticated = (req, res, next) => {
     if (req.isAuthenticated()) {
         return next();
@@ -55,7 +53,6 @@ const isAuthenticated = (req, res, next) => {
     res.status(401).json({ error: 'No autenticado' });
 };
 
-// Actualizar la ruta de estado de autenticación
 app.get('/api/auth/status', (req, res) => {
     const authCookie = req.cookies?.auth;
     const sessionUser = req.session?.user;
@@ -66,14 +63,12 @@ app.get('/api/auth/status', (req, res) => {
     });
 });
 
-// Ruta para cerrar sesión
 app.get('/auth/logout', (req, res) => {
     req.logout(() => {
         res.redirect('/');
     });
 });
 
-// Routes
 app.get('/api/auth/github', passport.authenticate('github'));
 
 app.get('/api/auth/github/callback',
@@ -83,7 +78,6 @@ app.get('/api/auth/github/callback',
     })
 );
 
-// Modificar la ruta de búsqueda
 app.post('/api/search', async (req, res) => {
     try {
         if (!req.body.query) {
@@ -116,7 +110,6 @@ app.post('/api/search', async (req, res) => {
         try {
             const jsonData = JSON.parse(text);
 
-            // Procesar las imágenes para cada lugar
             const processedData = await Promise.all(jsonData.map(async (place) => {
                 try {
                     const unsplashResponse = await fetch(

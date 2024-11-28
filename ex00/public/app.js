@@ -14,9 +14,9 @@ document.addEventListener('DOMContentLoaded', () => {
         { id: 3, title: 'Valencia', description: 'Ciudad de las artes y las ciencias', image: './assets/valencia.jpg', rating: 4.6, lat: 39.4699, lng: -0.3763 }
     ];
 
+    // Función para realizar la búsqueda con Gemini, más control de errores
     async function searchWithGemini(query) {
         try {
-            // Mostrar indicador de carga
             const loadingIndicator = document.createElement('div');
             loadingIndicator.className = 'loading-indicator';
             loadingIndicator.textContent = 'Buscando lugares...';
@@ -52,7 +52,6 @@ document.addEventListener('DOMContentLoaded', () => {
             recommendationsContainer.appendChild(errorDiv);
             return [];
         } finally {
-            // Remover indicador de carga
             const loadingIndicator = recommendationsContainer.querySelector('.loading-indicator');
             if (loadingIndicator) {
                 loadingIndicator.remove();
@@ -60,16 +59,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Verificar estado de autenticación
+    // Función para verificar el estado de autenticación
     async function checkAuthStatus() {
         try {
-            // Verificar si hay parámetros de login en la URL
             const urlParams = new URLSearchParams(window.location.search);
             const loginStatus = urlParams.get('login');
             const userData = urlParams.get('user');
 
             if (loginStatus === 'success' && userData) {
-                // Procesar datos del usuario recibidos
                 const user = JSON.parse(decodeURIComponent(userData));
                 const navLinks = document.querySelector('.nav-links');
                 navLinks.innerHTML = `
@@ -80,12 +77,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     <a href="/api/auth/logout" class="btn btn-secondary">Cerrar sesión</a>
                 `;
                 searchForm.style.display = 'flex';
-                // Limpiar URL
                 window.history.replaceState({}, document.title, '/');
                 return;
             }
 
-            // Si no hay parámetros, verificar estado con el servidor
             const response = await fetch('/api/auth/status');
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -113,7 +108,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (error) {
             console.error('Error checking auth status:', error);
-            // Mostrar estado no autenticado por defecto
             const navLinks = document.querySelector('.nav-links');
             navLinks.innerHTML = `
                 <a href="/api/auth/github" class="btn btn-secondary">
@@ -125,7 +119,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Verificar autenticación al cargar
     checkAuthStatus();
 
     searchForm.addEventListener('submit', async (e) => {
@@ -152,13 +145,12 @@ document.addEventListener('DOMContentLoaded', () => {
         grid.setAttribute('role', 'list');
 
         places.forEach(place => {
-            const currentPlace = place; // Guardar referencia para el evento del mapa
+            const currentPlace = place;
             const card = document.createElement('article');
             card.className = 'card';
             card.setAttribute('role', 'listitem');
 
-            // Mejorar el manejo de fallback de imágenes
-            const fallbackImage = `https://picsum.photos/400/200?random=${place.id}`;
+            const fallbackImage = `https://picsum.photos/400/200?random=${place.id}`; //placeholder image
             const imgUrl = place.image || fallbackImage;
 
             card.innerHTML = `
@@ -223,13 +215,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Mejorar accesibilidad del teclado
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && mapModal.style.display === 'block') {
             mapModal.style.display = 'none';
         }
     });
 
-    // Mostrar recomendaciones iniciales
-    displayRecommendations(places);
+    displayRecommendations(places); // Mostrar recomendaciones al cargar la página (Ejemplos)
 });

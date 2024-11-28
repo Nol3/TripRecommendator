@@ -211,6 +211,7 @@ nav {
 }
 
 .user-info {
+    font-size: 12px;
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -223,7 +224,6 @@ nav {
     border-radius: 50%;
 }
 
-/* Utilidades de accesibilidad */
 .visually-hidden {
     position: absolute;
     width: 1px;
@@ -235,7 +235,6 @@ nav {
     border: 0;
 }
 
-/* Mejoras mobile-first */
 .search-container {
     display: flex;
     align-items: stretch;
@@ -282,7 +281,6 @@ nav {
     background-color: var(--primary-hover);
 }
 
-/* Mejoras de accesibilidad para el foco */
 a:focus,
 button:focus,
 input:focus {
@@ -290,7 +288,6 @@ input:focus {
     outline-offset: 2px;
 }
 
-/* Skip link para navegación por teclado */
 .skip-link {
     position: absolute;
     top: -40px;
@@ -305,7 +302,6 @@ input:focus {
     top: 0;
 }
 
-/* Ajuste responsivo */
 @media (max-width: 640px) {
     .search-container {
         flex-direction: column;
@@ -322,7 +318,6 @@ input:focus {
     }
 }
 
-/* Desktop styles */
 @media (min-width: 768px) {
     nav {
         flex-direction: row;
