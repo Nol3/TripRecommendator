@@ -94,7 +94,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         ${data.user?.photo ? `<img src="${data.user.photo}" alt="Profile" class="profile-pic">` : ''}
                         ${data.user?.displayName || data.user?.username || 'Usuario'}
                     </span>
-                    <a href="/api/auth/logout" class="btn btn-secondary" id="logout-btn">Cerrar sesión</a>
+                    <a href="/api/auth/logout" class="btn btn-secondary" id="logout-btn"><span></span></a>
                 `;
                 searchForm.style.display = 'flex';
                 displayRecommendations(places);
