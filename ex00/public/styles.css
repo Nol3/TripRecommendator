@@ -43,8 +43,9 @@ nav {
     justify-content: space-around;
     align-items: center;
     max-width: 1280px;
-    margin: 0 auto;
+    margin: 5px;
     padding: 0 1rem;
+    border-radius: 25px;
 }
 
 .logo {
@@ -53,7 +54,7 @@ nav {
     gap: 0.5rem;
     color: var(--primary-color);
     font-weight: 600;
-    font-size: 0.75rem;
+    font-size: 1rem;
 }
 
 .nav-links {
@@ -374,6 +375,12 @@ input:focus {
         margin-top: 3.5rem;
     }
 }
+
+@media (min-width: 425px) {
+    .logo-text {
+        display: none;
+    }
+} 
 
 .loading-indicator {
     text-align: center;
