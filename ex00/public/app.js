@@ -94,29 +94,45 @@ document.addEventListener('DOMContentLoaded', () => {
                         ${data.user?.photo ? `<img src="${data.user.photo}" alt="Profile" class="profile-pic">` : ''}
                         ${data.user?.displayName || data.user?.username || 'Usuario'}
                     </span>
-                    <a href="/api/auth/logout" class="btn btn-secondary">Cerrar sesión</a>
+                    <a href="/auth/logout" class="btn btn-secondary" id="logout-btn">Cerrar sesión</a>
                 `;
                 searchForm.style.display = 'flex';
+                displayRecommendations(places); // Mostrar recomendaciones solo si está autenticado
+                
+                // Agregar listener para el botón de logout
+                const logoutBtn = document.getElementById('logout-btn');
+                if (logoutBtn) {
+                    logoutBtn.addEventListener('click', async (e) => {
+                        e.preventDefault();
+                        try {
+                            const response = await fetch('/auth/logout');
+                            if (response.ok) {
+                                updateNavForLoggedOutState();
+                                window.location.href = '/';
+                            }
+                        } catch (error) {
+                            console.error('Error during logout:', error);
+                        }
+                    });
+                }
             } else {
-                navLinks.innerHTML = `
-                    <a href="/api/auth/github" class="btn btn-secondary">
-                        <img src="assets/github.svg" alt="GitHub" width="20" height="20">
-                        Iniciar con GitHub
-                    </a>
-                `;
-                searchForm.style.display = 'none';
+                updateNavForLoggedOutState();
             }
         } catch (error) {
             console.error('Error checking auth status:', error);
-            const navLinks = document.querySelector('.nav-links');
-            navLinks.innerHTML = `
-                <a href="/api/auth/github" class="btn btn-secondary">
-                    <img src="assets/github.svg" alt="GitHub" width="20" height="20">
-                    Iniciar con GitHub
-                </a>
-            `;
-            searchForm.style.display = 'none';
+            updateNavForLoggedOutState();
         }
+    }
+
+    function updateNavForLoggedOutState() {
+        const navLinks = document.querySelector('.nav-links');
+        navLinks.innerHTML = `
+            <a href="/api/auth/github" class="btn btn-secondary">
+                <img src="assets/github.svg" alt="GitHub" width="20" height="20">
+                Iniciar con GitHub
+            </a>
+        `;
+        searchForm.style.display = 'none';
     }
 
     checkAuthStatus();
@@ -221,5 +237,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    displayRecommendations(places); // Mostrar recomendaciones al cargar la página (Ejemplos)
+    // Mantener esta línea al final del archivo para mostrar las recomendaciones iniciales
+    displayRecommendations(places);
 });

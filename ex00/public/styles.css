@@ -4,7 +4,7 @@
     --primary-hover: #1d4ed8;
     --background-start: #eff6ff;
     --background-end: #ffffff;
-    --text-primary: #111827;
+    --text-primary: #00226d;
     --text-secondary: #6b7280;
     --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
     --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
@@ -105,7 +105,7 @@ nav {
     flex-direction: column;
     text-align: center;
     padding: 4rem 1rem;
-    background-color: lightblue;
+    background: linear-gradient(to bottom, lightblue, lightgreen);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -143,8 +143,8 @@ nav {
 .recommendations {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 2rem;
-    padding: 2rem 1rem;
+    gap: 1rem;
+    padding: 1rem 1rem;
 }
 
 .card {
@@ -172,7 +172,6 @@ nav {
     padding: 1rem;
     flex-direction: column;
     align-content: center;
-    flex-wrap: wrap;
 }
 
 .card h3 {
@@ -324,6 +323,14 @@ input:focus {
     #search-form button {
         width: 100%;
     }
+
+    .logo-text {
+        display: none;
+    }
+
+    .card-content {
+        flex-wrap: wrap;
+    }
 }
 
 @media (min-width: 768px) {
@@ -350,7 +357,7 @@ input:focus {
 
     .recommendations {
         grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        padding: 2rem;
+        padding: 1rem;
     }
 
     .search-container {
@@ -375,13 +382,17 @@ input:focus {
         position: absolute;
         margin-top: 3.5rem;
     }
+    
+    .card-content {
+        flex-wrap: nowrap;
+    }
 }
 
-@media (max-width: 425px) {
+/* @media (max-width: 425px) {
     .logo-text {
         display: none;
     }
-} 
+}  */
 
 .loading-indicator {
     text-align: center;

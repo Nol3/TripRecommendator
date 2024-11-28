@@ -64,8 +64,14 @@ app.get('/api/auth/status', (req, res) => {
 });
 
 app.get('/auth/logout', (req, res) => {
-    req.logout(() => {
-        res.redirect('/');
+    req.session.destroy((err) => {
+        if (err) {
+            return res.status(500).json({ error: 'Error al cerrar sesión' });
+        }
+        req.logout(() => {
+            res.clearCookie('connect.sid'); // Limpia la cookie de sesión
+            res.redirect('/');
+        });
     });
 });
 
