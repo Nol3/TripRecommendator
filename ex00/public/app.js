@@ -71,7 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         ${user.avatar_url ? `<img src="${user.avatar_url}" alt="Profile" class="profile-pic">` : ''}
                         ${user.name || user.login}
                     </span>
-                    <a href="/api/auth/logout" class="btn btn-secondary">Cerrar sesión</a>
+                    <a href="/api/auth/logout" class="btn btn-secondary">Cerrar</a>
                 `;
                 searchForm.style.display = 'flex';
                 window.history.replaceState({}, document.title, '/');
