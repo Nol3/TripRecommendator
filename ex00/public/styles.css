@@ -400,12 +400,6 @@ input:focus {
     }
 }
 
-/* @media (max-width: 425px) {
-    .logo-text {
-        display: none;
-    }
-}  */
-
 .loading-indicator {
     text-align: center;
     padding: 2rem;

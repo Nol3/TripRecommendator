@@ -8,7 +8,6 @@ module.exports = async (req, res) => {
             return res.status(400).json({ error: 'No code provided' });
         }
 
-        // Obtener token de acceso
         const tokenResponse = await fetch('https://github.com/login/oauth/access_token', {
             method: 'POST',
             headers: {
@@ -24,7 +23,6 @@ module.exports = async (req, res) => {
 
         const tokenData = await tokenResponse.json();
 
-        // Obtener datos del usuario
         const userResponse = await fetch('https://api.github.com/user', {
             headers: {
                 'Authorization': `Bearer ${tokenData.access_token}`,

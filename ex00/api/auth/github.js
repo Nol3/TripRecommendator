@@ -6,12 +6,10 @@ const { default: fetch } = require('node-fetch');
 module.exports = async (req, res) => {
     try {
         const clientId = process.env.GITHUB_CLIENT_ID;
-        const scope = 'user'; // Añadir scope explícito
+        const scope = 'user';
 
-        // URL de autorización de GitHub
         const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&scope=${scope}`;
 
-        // Redirigir al usuario a GitHub
         res.writeHead(302, { Location: githubAuthUrl });
         res.end();
     } catch (error) {

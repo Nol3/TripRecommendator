@@ -7,14 +7,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const closeModal = document.querySelector('.close');
     let map;
 
-    // Datos de ejemplo (en una aplicación real, estos vendrían de una API)
     const places = [
         { id: 1, title: 'Barcelona', description: 'Ciudad cosmopolita con arquitectura única', image: './assets/barcelona.jpg', rating: 4.8, lat: 41.3851, lng: 2.1734 },
         { id: 2, title: 'Madrid', description: 'Capital cultural con museos de clase mundial', image: './assets/madrid.jpg', rating: 4.7, lat: 40.4168, lng: -3.7038 },
         { id: 3, title: 'Valencia', description: 'Ciudad de las artes y las ciencias', image: './assets/valencia.jpg', rating: 4.6, lat: 39.4699, lng: -0.3763 }
     ];
 
-    // Función para realizar la búsqueda con Gemini, más control de errores
     async function searchWithGemini(query) {
         try {
             const loadingIndicator = document.createElement('div');
@@ -59,7 +57,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Función para verificar el estado de autenticación
     async function checkAuthStatus() {
         try {
             const urlParams = new URLSearchParams(window.location.search);
@@ -99,7 +96,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 searchForm.style.display = 'flex';
                 displayRecommendations(places);
                 
-                // Agregar listener para el botón de logout
                 const logoutBtn = document.getElementById('logout-btn');
                 if (logoutBtn) {
                     logoutBtn.addEventListener('click', async (e) => {
@@ -237,6 +233,5 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Mantener esta línea al final del archivo para mostrar las recomendaciones iniciales
     displayRecommendations(places);
 });

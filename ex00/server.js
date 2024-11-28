@@ -15,7 +15,7 @@ app.use((req, res, next) => {
     next();
 });
 app.use(express.static(path.join(__dirname, 'public')));
-//establecer una sesion para el usuario de 24h por cookie
+
 app.use(session({
     secret: 'your-secret-key',
     resave: false,
@@ -26,6 +26,7 @@ app.use(session({
         maxAge: 24 * 60 * 60 * 1000 
     }
 }));
+
 app.use(passport.initialize());
 app.use(passport.session());
 
@@ -63,14 +64,13 @@ app.get('/api/auth/status', (req, res) => {
     });
 });
 
-// Cambiar esta ruta para que coincida con la que usamos en el frontend
 app.get('/api/auth/logout', (req, res) => {
     req.session.destroy((err) => {
         if (err) {
             return res.status(500).json({ error: 'Error al cerrar sesión' });
         }
         req.logout(() => {
-            res.clearCookie('connect.sid'); // Limpia la cookie de sesión
+            res.clearCookie('connect.sid');
             res.redirect('/');
         });
     });
