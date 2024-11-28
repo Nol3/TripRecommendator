@@ -313,7 +313,7 @@ input:focus {
     content: "Cerrar sesión";
 }
 
-@media (max-width: 640px) {
+@media (max-width: 767px) {
     .search-container {
         flex-direction: column;
         padding: 1rem;
@@ -334,10 +334,6 @@ input:focus {
 
     .card-content {
         flex-wrap: wrap;
-    }
-
-    .btn btn-secondary {
-        text;
     }
 
     #logout-btn::after {
