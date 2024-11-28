@@ -63,7 +63,8 @@ app.get('/api/auth/status', (req, res) => {
     });
 });
 
-app.get('/auth/logout', (req, res) => {
+// Cambiar esta ruta para que coincida con la que usamos en el frontend
+app.get('/api/auth/logout', (req, res) => {
     req.session.destroy((err) => {
         if (err) {
             return res.status(500).json({ error: 'Error al cerrar sesión' });

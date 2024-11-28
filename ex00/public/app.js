@@ -94,10 +94,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         ${data.user?.photo ? `<img src="${data.user.photo}" alt="Profile" class="profile-pic">` : ''}
                         ${data.user?.displayName || data.user?.username || 'Usuario'}
                     </span>
-                    <a href="/auth/logout" class="btn btn-secondary" id="logout-btn">Cerrar sesión</a>
+                    <a href="/api/auth/logout" class="btn btn-secondary" id="logout-btn">Cerrar sesión</a>
                 `;
                 searchForm.style.display = 'flex';
-                displayRecommendations(places); // Mostrar recomendaciones solo si está autenticado
+                displayRecommendations(places);
                 
                 // Agregar listener para el botón de logout
                 const logoutBtn = document.getElementById('logout-btn');
@@ -105,7 +105,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     logoutBtn.addEventListener('click', async (e) => {
                         e.preventDefault();
                         try {
-                            const response = await fetch('/auth/logout');
+                            const response = await fetch('/api/auth/logout');
                             if (response.ok) {
                                 updateNavForLoggedOutState();
                                 window.location.href = '/';
