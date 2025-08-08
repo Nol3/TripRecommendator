@@ -4,8 +4,8 @@ const passport = require('passport');
 const GitHubStrategy = require('passport-github2').Strategy;
 const session = require('express-session');
 const cookieParser = require('cookie-parser');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
 const path = require('path');
+const RecommendationService = require('./services/recommendations');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -52,13 +52,9 @@ if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
 passport.serializeUser((user, done) => done(null, user));
 passport.deserializeUser((user, done) => done(null, user));
 
-// Configurar Gemini AI solo si la API key está disponible
-let genAI = null;
-if (process.env.GEMINI_API_KEY) {
-    genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-} else {
-    console.log('⚠️  Gemini API no configurada. La funcionalidad de recomendaciones no estará disponible.');
-}
+// Inicializar el servicio de recomendaciones
+const recommendationService = new RecommendationService(process.env.GEMINI_API_KEY);
+console.log('✅ Servicio de recomendaciones inicializado');
 
 const isAuthenticated = (req, res, next) => {
     if (req.isAuthenticated()) {
@@ -122,30 +118,25 @@ app.get('/api/debug/env', (req, res) => {
     });
 });
 
-// Endpoint de prueba para Gemini
-app.get('/api/debug/gemini', async (req, res) => {
+// Endpoint de prueba para el sistema de recomendaciones
+app.get('/api/debug/recommendations', async (req, res) => {
     try {
-        if (!genAI) {
-            return res.status(500).json({
-                error: 'Gemini no está inicializado',
-                GEMINI_API_KEY: process.env.GEMINI_API_KEY ? 'Presente' : 'Ausente'
-            });
-        }
+        const testQuery = req.query.q || 'Madrid';
+        console.log('🧪 Probando recomendaciones para:', testQuery);
 
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
-        const result = await model.generateContent("Responde solo con la palabra 'OK'");
-        const response = await result.response;
-        const text = response.text();
+        const places = await recommendationService.getRecommendations(testQuery);
+        const placesWithImages = await recommendationService.addImagesToPlaces(places);
 
         res.json({
             success: true,
-            response: text,
-            message: 'Gemini API funciona correctamente'
+            query: testQuery,
+            places: placesWithImages,
+            message: 'Sistema de recomendaciones funciona correctamente'
         });
     } catch (error) {
-        console.error('❌ Error en prueba de Gemini:', error);
+        console.error('❌ Error en prueba de recomendaciones:', error);
         res.status(500).json({
-            error: 'Error al probar Gemini API',
+            error: 'Error al probar sistema de recomendaciones',
             details: error.message,
             stack: error.stack
         });
@@ -170,173 +161,21 @@ app.post('/api/search', async (req, res) => {
             return res.status(400).json({ error: 'Query is required' });
         }
 
-        // Verificar si Gemini está configurado
-        if (!genAI) {
-            console.log('❌ Gemini API no configurada');
-            console.log('🔍 Variables de entorno disponibles:', {
-                GEMINI_API_KEY: process.env.GEMINI_API_KEY ? 'Presente' : 'Ausente',
-                NODE_ENV: process.env.NODE_ENV
-            });
-            return res.status(500).json({
-                error: 'Gemini API no configurada. Por favor, configura GEMINI_API_KEY en tu archivo .env',
-                debug: {
-                    GEMINI_API_KEY: process.env.GEMINI_API_KEY ? 'Presente' : 'Ausente',
-                    NODE_ENV: process.env.NODE_ENV
-                }
+        // Usar el nuevo servicio de recomendaciones
+        const places = await recommendationService.getRecommendations(req.body.query);
+
+        if (!places || places.length === 0) {
+            return res.status(404).json({
+                error: 'No se encontraron recomendaciones para esta búsqueda'
             });
         }
 
-        console.log('✅ Gemini API configurada correctamente');
+        // Agregar imágenes a los lugares
+        const placesWithImages = await recommendationService.addImagesToPlaces(places);
 
-                const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+        console.log('✅ Recomendaciones generadas:', placesWithImages.length, 'lugares');
+        res.json(placesWithImages);
 
-        const prompt = `Como experto en viajes, recomiéndame lugares específicos para visitar en: ${req.body.query}
-                       Responde ÚNICAMENTE en formato JSON válido como este ejemplo:
-                       [
-                         {
-                           "id": 1,
-                           "title": "Nombre del lugar",
-                           "description": "Breve descripción del lugar (máximo 150 caracteres)",
-                           "rating": 4.5,
-                           "lat": 41.3851,
-                           "lng": 2.1734
-                         }
-                       ]
-                       Incluye exactamente 3 lugares. Asegúrate de que las coordenadas sean precisas.
-                       IMPORTANTE: Responde SOLO con el JSON válido, sin texto adicional, sin markdown, sin explicaciones.`;
-
-        console.log('📝 Enviando prompt a Gemini:', prompt);
-
-        let text;
-        try {
-            const result = await model.generateContent(prompt);
-            const response = await result.response;
-            text = response.text();
-
-            console.log('📄 Respuesta de Gemini:', text);
-        } catch (geminiError) {
-            console.error('❌ Error al llamar a Gemini API:', geminiError);
-            console.error('📋 Stack trace:', geminiError.stack);
-
-            // Si es un error de cuota, usar datos de ejemplo
-            if (geminiError.message.includes('429') || geminiError.message.includes('quota')) {
-                console.log('⚠️ Usando datos de ejemplo debido a límite de cuota');
-                const fallbackData = [
-                    {
-                        id: 1,
-                        title: "Plaza Mayor",
-                        description: "Histórica plaza central con arquitectura barroca",
-                        rating: 4.7,
-                        lat: 40.4155,
-                        lng: -3.7074
-                    },
-                    {
-                        id: 2,
-                        title: "Museo del Prado",
-                        description: "Museo de arte con obras maestras españolas",
-                        rating: 4.8,
-                        lat: 40.4138,
-                        lng: -3.6921
-                    },
-                    {
-                        id: 3,
-                        title: "Parque del Retiro",
-                        description: "Hermoso parque urbano con lagos y jardines",
-                        rating: 4.6,
-                        lat: 40.4168,
-                        lng: -3.6886
-                    }
-                ];
-
-                const processedData = await Promise.all(fallbackData.map(async (place) => {
-                    try {
-                        const unsplashResponse = await fetch(
-                            `https://api.unsplash.com/search/photos?query=${encodeURIComponent(place.title)}&client_id=${process.env.UNSPLASH_ACCESS_KEY}`,
-                            {
-                                headers: {
-                                    'Accept-Version': 'v1'
-                                }
-                            }
-                        );
-
-                        if (!unsplashResponse.ok) {
-                            throw new Error('Error fetching from Unsplash');
-                        }
-
-                        const unsplashData = await unsplashResponse.json();
-                        const imageUrl = unsplashData.results[0]?.urls?.regular;
-
-                        return {
-                            ...place,
-                            image: imageUrl || `https://source.unsplash.com/800x600/?${encodeURIComponent(place.title)}`
-                        };
-                    } catch (error) {
-                        console.error('Error fetching image:', error);
-                        return place;
-                    }
-                }));
-
-                return res.json(processedData);
-            }
-
-            return res.status(500).json({
-                error: 'Error al comunicarse con Gemini API',
-                details: geminiError.message,
-                type: 'gemini_api_error'
-            });
-        }
-
-        // Limpiar la respuesta de Gemini para extraer solo el JSON
-        let cleanText = text.trim();
-        if (cleanText.startsWith('```json')) {
-            cleanText = cleanText.replace(/```json\n?/, '').replace(/```\n?/, '');
-        } else if (cleanText.startsWith('```')) {
-            cleanText = cleanText.replace(/```\n?/, '').replace(/```\n?/, '');
-        }
-
-        try {
-            console.log('🧹 Texto limpio para parsing:', cleanText);
-            const jsonData = JSON.parse(cleanText);
-            console.log('✅ JSON parseado correctamente:', jsonData);
-
-            const processedData = await Promise.all(jsonData.map(async (place) => {
-                try {
-                    const unsplashResponse = await fetch(
-                        `https://api.unsplash.com/search/photos?query=${encodeURIComponent(place.title)}&client_id=${process.env.UNSPLASH_ACCESS_KEY}`,
-                        {
-                            headers: {
-                                'Accept-Version': 'v1'
-                            }
-                        }
-                    );
-
-                    if (!unsplashResponse.ok) {
-                        throw new Error('Error fetching from Unsplash');
-                    }
-
-                    const unsplashData = await unsplashResponse.json();
-                    const imageUrl = unsplashData.results[0]?.urls?.regular;
-
-                    return {
-                        ...place,
-                        image: imageUrl || `https://source.unsplash.com/800x600/?${encodeURIComponent(place.title)}`
-                    };
-                } catch (error) {
-                    console.error('Error fetching image:', error);
-                    return place;
-                }
-            }));
-
-            res.json(processedData);
-        } catch (parseError) {
-            console.error('❌ Error al parsear JSON:', parseError);
-            console.error('📄 Texto que causó el error:', cleanText);
-            res.status(500).json({
-                error: 'Error al procesar la respuesta de Gemini',
-                details: parseError.message,
-                rawResponse: text
-            });
-        }
     } catch (error) {
         console.error('❌ Error general en búsqueda:', error);
         console.error('📋 Stack trace:', error.stack);

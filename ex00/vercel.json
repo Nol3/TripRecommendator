@@ -16,7 +16,7 @@
     { "source": "/api/auth/status", "destination": "/server.js" },
     { "source": "/api/auth/logout", "destination": "/server.js" },
     { "source": "/api/debug/env", "destination": "/server.js" },
-    { "source": "/api/debug/gemini", "destination": "/server.js" },
+    { "source": "/api/debug/recommendations", "destination": "/server.js" },
     { "source": "/api/(.*)", "destination": "/api/$1" },
     { "source": "/(.*)", "destination": "/server.js" }
   ],
