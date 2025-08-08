@@ -78,13 +78,33 @@ app.get('/api/auth/status', (req, res) => {
 });
 
 app.get('/api/auth/logout', (req, res) => {
+    console.log('🚪 Intentando cerrar sesión...');
+
+    // Limpiar todas las cookies relacionadas con la autenticación
+    res.clearCookie('connect.sid');
+    res.clearCookie('auth');
+    res.clearCookie('userId');
+
+    // Destruir la sesión
     req.session.destroy((err) => {
         if (err) {
+            console.error('❌ Error al destruir sesión:', err);
             return res.status(500).json({ error: 'Error al cerrar sesión' });
         }
-        req.logout(() => {
-            res.clearCookie('connect.sid');
-            res.redirect('/');
+
+        console.log('✅ Sesión destruida correctamente');
+
+        // Logout de passport
+        req.logout((err) => {
+            if (err) {
+                console.error('❌ Error en passport logout:', err);
+            }
+
+            // Enviar respuesta JSON en lugar de redirect para mejor manejo en el frontend
+            res.json({
+                success: true,
+                message: 'Sesión cerrada correctamente'
+            });
         });
     });
 });
@@ -100,16 +120,22 @@ app.get('/api/auth/github/callback',
 
 app.post('/api/search', async (req, res) => {
     try {
+        console.log('🔍 Búsqueda recibida:', req.body);
+
         if (!req.body.query) {
+            console.log('❌ Query no proporcionada');
             return res.status(400).json({ error: 'Query is required' });
         }
 
         // Verificar si Gemini está configurado
         if (!genAI) {
+            console.log('❌ Gemini API no configurada');
             return res.status(500).json({
                 error: 'Gemini API no configurada. Por favor, configura GEMINI_API_KEY en tu archivo .env'
             });
         }
+
+        console.log('✅ Gemini API configurada correctamente');
 
         const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
@@ -128,11 +154,13 @@ app.post('/api/search', async (req, res) => {
                        Incluye exactamente 3 lugares. Asegúrate de que las coordenadas sean precisas.
                        IMPORTANTE: Responde SOLO con el JSON válido, sin texto adicional, sin markdown, sin explicaciones.`;
 
+        console.log('📝 Enviando prompt a Gemini:', prompt);
+
         const result = await model.generateContent(prompt);
         const response = await result.response;
         const text = response.text();
 
-        console.log('Respuesta de Gemini:', text);
+        console.log('📄 Respuesta de Gemini:', text);
 
         // Limpiar la respuesta de Gemini para extraer solo el JSON
         let cleanText = text.trim();
@@ -143,7 +171,9 @@ app.post('/api/search', async (req, res) => {
         }
 
         try {
+            console.log('🧹 Texto limpio para parsing:', cleanText);
             const jsonData = JSON.parse(cleanText);
+            console.log('✅ JSON parseado correctamente:', jsonData);
 
             const processedData = await Promise.all(jsonData.map(async (place) => {
                 try {
@@ -175,12 +205,21 @@ app.post('/api/search', async (req, res) => {
 
             res.json(processedData);
         } catch (parseError) {
-            console.error('Error al parsear JSON:', parseError);
-            res.status(500).json({ error: 'Error al procesar la respuesta' });
+            console.error('❌ Error al parsear JSON:', parseError);
+            console.error('📄 Texto que causó el error:', cleanText);
+            res.status(500).json({
+                error: 'Error al procesar la respuesta de Gemini',
+                details: parseError.message,
+                rawResponse: text
+            });
         }
     } catch (error) {
-        console.error('Error en búsqueda:', error);
-        res.status(500).json({ error: 'Error al procesar la búsqueda' });
+        console.error('❌ Error general en búsqueda:', error);
+        console.error('📋 Stack trace:', error.stack);
+        res.status(500).json({
+            error: 'Error al procesar la búsqueda',
+            details: error.message
+        });
     }
 });
 

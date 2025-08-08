@@ -71,10 +71,30 @@ document.addEventListener('DOMContentLoaded', () => {
                         ${user.avatar_url ? `<img src="${user.avatar_url}" alt="Profile" class="profile-pic">` : ''}
                         ${user.name || user.login}
                     </span>
-                    <a href="/api/auth/logout" class="btn btn-secondary">Cerrar</a>
+                    <button class="btn btn-secondary" id="logout-btn">Cerrar sesión</button>
                 `;
                 searchForm.style.display = 'flex';
                 window.history.replaceState({}, document.title, '/');
+
+                // Agregar event listener al botón de logout
+                const logoutBtn = document.getElementById('logout-btn');
+                if (logoutBtn) {
+                    logoutBtn.addEventListener('click', async (e) => {
+                        e.preventDefault();
+                        console.log('🚪 Intentando cerrar sesión...');
+                        try {
+                            const response = await fetch('/api/auth/logout');
+                            if (response.ok) {
+                                updateNavForLoggedOutState();
+                                window.location.reload();
+                            }
+                        } catch (error) {
+                            console.error('❌ Error durante logout:', error);
+                            updateNavForLoggedOutState();
+                            window.location.reload();
+                        }
+                    });
+                }
                 return;
             }
 
@@ -91,23 +111,37 @@ document.addEventListener('DOMContentLoaded', () => {
                         ${data.user?.photo ? `<img src="${data.user.photo}" alt="Profile" class="profile-pic">` : ''}
                         ${data.user?.displayName || data.user?.username || 'Usuario'}
                     </span>
-                    <a href="/api/auth/logout" class="btn btn-secondary" id="logout-btn"><span></span></a>
+                    <button class="btn btn-secondary" id="logout-btn">Cerrar sesión</button>
                 `;
                 searchForm.style.display = 'flex';
                 displayRecommendations(places);
-                
+
                 const logoutBtn = document.getElementById('logout-btn');
                 if (logoutBtn) {
                     logoutBtn.addEventListener('click', async (e) => {
                         e.preventDefault();
+                        console.log('🚪 Intentando cerrar sesión...');
                         try {
                             const response = await fetch('/api/auth/logout');
+                            console.log('📡 Respuesta del logout:', response);
+
                             if (response.ok) {
+                                const data = await response.json();
+                                console.log('✅ Logout exitoso:', data);
                                 updateNavForLoggedOutState();
-                                window.location.href = '/';
+                                // Limpiar cualquier estado local
+                                localStorage.removeItem('user');
+                                sessionStorage.clear();
+                                // Recargar la página para limpiar completamente el estado
+                                window.location.reload();
+                            } else {
+                                console.error('❌ Error en logout:', response.status);
                             }
                         } catch (error) {
-                            console.error('Error during logout:', error);
+                            console.error('❌ Error durante logout:', error);
+                            // Forzar logout local
+                            updateNavForLoggedOutState();
+                            window.location.reload();
                         }
                     });
                 }
