@@ -84,9 +84,16 @@ document.addEventListener('DOMContentLoaded', () => {
                         console.log('🚪 Intentando cerrar sesión...');
                         try {
                             const response = await fetch('/api/auth/logout');
+                            console.log('📡 Respuesta del logout:', response);
                             if (response.ok) {
+                                const data = await response.json();
+                                console.log('✅ Logout exitoso:', data);
                                 updateNavForLoggedOutState();
+                                localStorage.removeItem('user');
+                                sessionStorage.clear();
                                 window.location.reload();
+                            } else {
+                                console.error('❌ Error en logout:', response.status);
                             }
                         } catch (error) {
                             console.error('❌ Error durante logout:', error);
@@ -116,6 +123,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 searchForm.style.display = 'flex';
                 displayRecommendations(places);
 
+                // Agregar event listener al botón de logout
                 const logoutBtn = document.getElementById('logout-btn');
                 if (logoutBtn) {
                     logoutBtn.addEventListener('click', async (e) => {
@@ -129,17 +137,14 @@ document.addEventListener('DOMContentLoaded', () => {
                                 const data = await response.json();
                                 console.log('✅ Logout exitoso:', data);
                                 updateNavForLoggedOutState();
-                                // Limpiar cualquier estado local
                                 localStorage.removeItem('user');
                                 sessionStorage.clear();
-                                // Recargar la página para limpiar completamente el estado
                                 window.location.reload();
                             } else {
                                 console.error('❌ Error en logout:', response.status);
                             }
                         } catch (error) {
                             console.error('❌ Error durante logout:', error);
-                            // Forzar logout local
                             updateNavForLoggedOutState();
                             window.location.reload();
                         }
@@ -162,7 +167,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 Iniciar con GitHub
             </a>
         `;
-        searchForm.style.display = 'none';
+        // Mostrar el formulario de búsqueda para todos los usuarios
+        searchForm.style.display = 'flex';
+        // Mostrar lugares de ejemplo para usuarios no autenticados
+        displayRecommendations(places);
     }
 
     checkAuthStatus();
