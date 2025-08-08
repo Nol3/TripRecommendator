@@ -109,6 +109,49 @@ app.get('/api/auth/logout', (req, res) => {
     });
 });
 
+// Endpoint de debug para verificar variables de entorno
+app.get('/api/debug/env', (req, res) => {
+    res.json({
+        NODE_ENV: process.env.NODE_ENV,
+        GITHUB_CLIENT_ID: process.env.GITHUB_CLIENT_ID ? 'Configurado' : 'No configurado',
+        GITHUB_CLIENT_SECRET: process.env.GITHUB_CLIENT_SECRET ? 'Configurado' : 'No configurado',
+        GEMINI_API_KEY: process.env.GEMINI_API_KEY ? 'Configurado' : 'No configurado',
+        UNSPLASH_ACCESS_KEY: process.env.UNSPLASH_ACCESS_KEY ? 'Configurado' : 'No configurado',
+        CALLBACK_URL: process.env.CALLBACK_URL,
+        genAI_initialized: genAI ? 'Sí' : 'No'
+    });
+});
+
+// Endpoint de prueba para Gemini
+app.get('/api/debug/gemini', async (req, res) => {
+    try {
+        if (!genAI) {
+            return res.status(500).json({
+                error: 'Gemini no está inicializado',
+                GEMINI_API_KEY: process.env.GEMINI_API_KEY ? 'Presente' : 'Ausente'
+            });
+        }
+
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+        const result = await model.generateContent("Responde solo con la palabra 'OK'");
+        const response = await result.response;
+        const text = response.text();
+
+        res.json({
+            success: true,
+            response: text,
+            message: 'Gemini API funciona correctamente'
+        });
+    } catch (error) {
+        console.error('❌ Error en prueba de Gemini:', error);
+        res.status(500).json({
+            error: 'Error al probar Gemini API',
+            details: error.message,
+            stack: error.stack
+        });
+    }
+});
+
 app.get('/api/auth/github', passport.authenticate('github'));
 
 app.get('/api/auth/github/callback',
@@ -130,14 +173,22 @@ app.post('/api/search', async (req, res) => {
         // Verificar si Gemini está configurado
         if (!genAI) {
             console.log('❌ Gemini API no configurada');
+            console.log('🔍 Variables de entorno disponibles:', {
+                GEMINI_API_KEY: process.env.GEMINI_API_KEY ? 'Presente' : 'Ausente',
+                NODE_ENV: process.env.NODE_ENV
+            });
             return res.status(500).json({
-                error: 'Gemini API no configurada. Por favor, configura GEMINI_API_KEY en tu archivo .env'
+                error: 'Gemini API no configurada. Por favor, configura GEMINI_API_KEY en tu archivo .env',
+                debug: {
+                    GEMINI_API_KEY: process.env.GEMINI_API_KEY ? 'Presente' : 'Ausente',
+                    NODE_ENV: process.env.NODE_ENV
+                }
             });
         }
 
         console.log('✅ Gemini API configurada correctamente');
 
-        const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+                const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
 
         const prompt = `Como experto en viajes, recomiéndame lugares específicos para visitar en: ${req.body.query}
                        Responde ÚNICAMENTE en formato JSON válido como este ejemplo:
@@ -156,11 +207,84 @@ app.post('/api/search', async (req, res) => {
 
         console.log('📝 Enviando prompt a Gemini:', prompt);
 
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
-        const text = response.text();
+        let text;
+        try {
+            const result = await model.generateContent(prompt);
+            const response = await result.response;
+            text = response.text();
 
-        console.log('📄 Respuesta de Gemini:', text);
+            console.log('📄 Respuesta de Gemini:', text);
+        } catch (geminiError) {
+            console.error('❌ Error al llamar a Gemini API:', geminiError);
+            console.error('📋 Stack trace:', geminiError.stack);
+
+            // Si es un error de cuota, usar datos de ejemplo
+            if (geminiError.message.includes('429') || geminiError.message.includes('quota')) {
+                console.log('⚠️ Usando datos de ejemplo debido a límite de cuota');
+                const fallbackData = [
+                    {
+                        id: 1,
+                        title: "Plaza Mayor",
+                        description: "Histórica plaza central con arquitectura barroca",
+                        rating: 4.7,
+                        lat: 40.4155,
+                        lng: -3.7074
+                    },
+                    {
+                        id: 2,
+                        title: "Museo del Prado",
+                        description: "Museo de arte con obras maestras españolas",
+                        rating: 4.8,
+                        lat: 40.4138,
+                        lng: -3.6921
+                    },
+                    {
+                        id: 3,
+                        title: "Parque del Retiro",
+                        description: "Hermoso parque urbano con lagos y jardines",
+                        rating: 4.6,
+                        lat: 40.4168,
+                        lng: -3.6886
+                    }
+                ];
+
+                const processedData = await Promise.all(fallbackData.map(async (place) => {
+                    try {
+                        const unsplashResponse = await fetch(
+                            `https://api.unsplash.com/search/photos?query=${encodeURIComponent(place.title)}&client_id=${process.env.UNSPLASH_ACCESS_KEY}`,
+                            {
+                                headers: {
+                                    'Accept-Version': 'v1'
+                                }
+                            }
+                        );
+
+                        if (!unsplashResponse.ok) {
+                            throw new Error('Error fetching from Unsplash');
+                        }
+
+                        const unsplashData = await unsplashResponse.json();
+                        const imageUrl = unsplashData.results[0]?.urls?.regular;
+
+                        return {
+                            ...place,
+                            image: imageUrl || `https://source.unsplash.com/800x600/?${encodeURIComponent(place.title)}`
+                        };
+                    } catch (error) {
+                        console.error('Error fetching image:', error);
+                        return place;
+                    }
+                }));
+
+                return res.json(processedData);
+            }
+
+            return res.status(500).json({
+                error: 'Error al comunicarse con Gemini API',
+                details: geminiError.message,
+                type: 'gemini_api_error'
+            });
+        }
 
         // Limpiar la respuesta de Gemini para extraer solo el JSON
         let cleanText = text.trim();
