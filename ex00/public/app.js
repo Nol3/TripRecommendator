@@ -1,3 +1,94 @@
+// Global variable to track current authenticated user
+let currentUser = null;
+
+// Default places data available globally
+const defaultPlaces = [
+    { id: 1, title: 'Barcelona', description: 'Ciudad cosmopolita con arquitectura única', image: './assets/barcelona.jpg', rating: 4.8, lat: 41.3851, lng: 2.1734 },
+    { id: 2, title: 'Madrid', description: 'Capital cultural con museos de clase mundial', image: './assets/madrid.jpg', rating: 4.7, lat: 40.4168, lng: -3.7038 },
+    { id: 3, title: 'Valencia', description: 'Ciudad de las artes y las ciencias', image: './assets/valencia.jpg', rating: 4.6, lat: 39.4699, lng: -0.3763 }
+];
+
+// Reusable helper function to update navigation for logged out state
+function updateNavForLoggedOutState() {
+    // Clear current user
+    currentUser = null;
+    const navLinks = document.querySelector('.nav-links');
+    navLinks.innerHTML = `
+        <a href="/api/auth/github" class="btn btn-secondary">
+            <img src="assets/github.svg" alt="GitHub" width="20" height="20">
+            Iniciar con GitHub
+        </a>
+    `;
+    // Mostrar el formulario de búsqueda para todos los usuarios
+    const searchForm = document.getElementById('search-form');
+    if (searchForm) {
+        searchForm.style.display = 'flex';
+    }
+    // Show default places for logged out users
+    const recommendationsContainer = document.getElementById('recommendations');
+    if (recommendationsContainer && window.displayRecommendations) {
+        window.displayRecommendations(defaultPlaces);
+    }
+}
+
+// Function to update visited button text with current count
+function updateVisitedButtonText() {
+    if (currentUser && currentUser.username) {
+        const btnVisited = document.getElementById('btnVisited');
+        if (btnVisited) {
+            // eslint-disable-next-line no-undef
+            const visitedCount = getVisited(currentUser.username).length;
+            const visitedButtonText = visitedCount > 0 ? `Mis Lugares Visitados (${visitedCount})` : 'Mis Lugares Visitados';
+            btnVisited.textContent = visitedButtonText;
+        }
+    }
+}
+
+// Reusable logout function at top-level scope
+function logout() {
+    console.log('🚪 Intentando cerrar sesión...');
+    
+    // Close any open modals before logging out
+    const visitedModal = document.getElementById('visitedModal');
+    const mapModal = document.getElementById('map-modal');
+    if (visitedModal && visitedModal.style.display === 'block') {
+        visitedModal.style.display = 'none';
+        console.log('✅ Visited modal closed during logout');
+    }
+    if (mapModal && mapModal.style.display === 'block') {
+        mapModal.style.display = 'none';
+        console.log('✅ Map modal closed during logout');
+    }
+    
+    // Clear current user and auth tokens/session data
+    currentUser = null;
+    localStorage.removeItem('user');
+    sessionStorage.clear();
+    
+    // Update UI (hide auth-only buttons, show "Login with GitHub")
+    updateNavForLoggedOutState();
+    
+    // Perform logout API call
+    fetch('/api/auth/logout')
+        .then(response => {
+            console.log('📡 Respuesta del logout:', response);
+            if (response.ok) {
+                return response.json();
+            }
+            throw new Error(`HTTP error! status: ${response.status}`);
+        })
+        .then(data => {
+            console.log('✅ Logout exitoso:', data);
+        })
+        .catch(error => {
+            console.error('❌ Error durante logout:', error);
+        })
+        .finally(() => {
+            // Redirect to home (reload page to ensure clean state)
+            window.location.reload();
+        });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const searchForm = document.getElementById('search-form');
     const searchInput = document.getElementById('search-input');
@@ -7,11 +98,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const closeModal = document.querySelector('.close');
     let map;
 
-    const places = [
-        { id: 1, title: 'Barcelona', description: 'Ciudad cosmopolita con arquitectura única', image: './assets/barcelona.jpg', rating: 4.8, lat: 41.3851, lng: 2.1734 },
-        { id: 2, title: 'Madrid', description: 'Capital cultural con museos de clase mundial', image: './assets/madrid.jpg', rating: 4.7, lat: 40.4168, lng: -3.7038 },
-        { id: 3, title: 'Valencia', description: 'Ciudad de las artes y las ciencias', image: './assets/valencia.jpg', rating: 4.6, lat: 39.4699, lng: -0.3763 }
-    ];
+    // Use the global defaultPlaces array
+    const places = defaultPlaces;
 
     async function searchWithGemini(query) {
         try {
@@ -65,12 +153,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (loginStatus === 'success' && userData) {
                 const user = JSON.parse(decodeURIComponent(userData));
+                // Set currentUser with username from the authenticated user
+                currentUser = {
+                    username: user.login || user.username || user.name
+                };
+                
+                // Pre-load visited list length for UI enhancement
+                // eslint-disable-next-line no-undef
+                const visitedCount = getVisited(currentUser.username).length;
+                const visitedButtonText = visitedCount > 0 ? `Mis Lugares Visitados (${visitedCount})` : 'Mis Lugares Visitados';
+                
                 const navLinks = document.querySelector('.nav-links');
                 navLinks.innerHTML = `
                     <span class="user-info">
                         ${user.avatar_url ? `<img src="${user.avatar_url}" alt="Profile" class="profile-pic">` : ''}
                         ${user.name || user.login}
                     </span>
+                    <button class="btn btn-secondary" id="btnVisited">${visitedButtonText}</button>
                     <button class="btn btn-secondary" id="logout-btn">Cerrar sesión</button>
                 `;
                 searchForm.style.display = 'flex';
@@ -79,27 +178,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Agregar event listener al botón de logout
                 const logoutBtn = document.getElementById('logout-btn');
                 if (logoutBtn) {
-                    logoutBtn.addEventListener('click', async (e) => {
+                    logoutBtn.addEventListener('click', (e) => {
                         e.preventDefault();
-                        console.log('🚪 Intentando cerrar sesión...');
-                        try {
-                            const response = await fetch('/api/auth/logout');
-                            console.log('📡 Respuesta del logout:', response);
-                            if (response.ok) {
-                                const data = await response.json();
-                                console.log('✅ Logout exitoso:', data);
-                                updateNavForLoggedOutState();
-                                localStorage.removeItem('user');
-                                sessionStorage.clear();
-                                window.location.reload();
-                            } else {
-                                console.error('❌ Error en logout:', response.status);
-                            }
-                        } catch (error) {
-                            console.error('❌ Error durante logout:', error);
-                            updateNavForLoggedOutState();
-                            window.location.reload();
-                        }
+                        logout();
+                    });
+                }
+
+                const btnVisited = document.getElementById('btnVisited');
+                if (btnVisited) {
+                    btnVisited.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        showVisitedPlaces();
                     });
                 }
                 return;
@@ -113,11 +202,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const navLinks = document.querySelector('.nav-links');
             if (data.authenticated) {
+                // Set currentUser with username from the authenticated user
+                currentUser = {
+                    username: data.user?.username || data.user?.displayName || data.user?.login || 'Usuario'
+                };
+                
+                // Pre-load visited list length for UI enhancement
+                // eslint-disable-next-line no-undef
+                const visitedCount = getVisited(currentUser.username).length;
+                const visitedButtonText = visitedCount > 0 ? `Mis Lugares Visitados (${visitedCount})` : 'Mis Lugares Visitados';
+                
                 navLinks.innerHTML = `
                     <span class="user-info">
                         ${data.user?.photo ? `<img src="${data.user.photo}" alt="Profile" class="profile-pic">` : ''}
                         ${data.user?.displayName || data.user?.username || 'Usuario'}
                     </span>
+                    <button class="btn btn-secondary" id="btnVisited">${visitedButtonText}</button>
                     <button class="btn btn-secondary" id="logout-btn">Cerrar sesión</button>
                 `;
                 searchForm.style.display = 'flex';
@@ -126,28 +226,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Agregar event listener al botón de logout
                 const logoutBtn = document.getElementById('logout-btn');
                 if (logoutBtn) {
-                    logoutBtn.addEventListener('click', async (e) => {
+                    logoutBtn.addEventListener('click', (e) => {
                         e.preventDefault();
-                        console.log('🚪 Intentando cerrar sesión...');
-                        try {
-                            const response = await fetch('/api/auth/logout');
-                            console.log('📡 Respuesta del logout:', response);
+                        logout();
+                    });
+                }
 
-                            if (response.ok) {
-                                const data = await response.json();
-                                console.log('✅ Logout exitoso:', data);
-                                updateNavForLoggedOutState();
-                                localStorage.removeItem('user');
-                                sessionStorage.clear();
-                                window.location.reload();
-                            } else {
-                                console.error('❌ Error en logout:', response.status);
-                            }
-                        } catch (error) {
-                            console.error('❌ Error durante logout:', error);
-                            updateNavForLoggedOutState();
-                            window.location.reload();
-                        }
+                const btnVisited = document.getElementById('btnVisited');
+                if (btnVisited) {
+                    btnVisited.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        showVisitedPlaces();
                     });
                 }
             } else {
@@ -157,20 +246,6 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Error checking auth status:', error);
             updateNavForLoggedOutState();
         }
-    }
-
-    function updateNavForLoggedOutState() {
-        const navLinks = document.querySelector('.nav-links');
-        navLinks.innerHTML = `
-            <a href="/api/auth/github" class="btn btn-secondary">
-                <img src="assets/github.svg" alt="GitHub" width="20" height="20">
-                Iniciar con GitHub
-            </a>
-        `;
-        // Mostrar el formulario de búsqueda para todos los usuarios
-        searchForm.style.display = 'flex';
-        // Mostrar lugares de ejemplo para usuarios no autenticados
-        displayRecommendations(places);
     }
 
     checkAuthStatus();
@@ -257,6 +332,20 @@ document.addEventListener('DOMContentLoaded', () => {
         L.marker([place.lat, place.lng]).addTo(map)
             .bindPopup(place.title)
             .openPopup();
+        
+        // Track visit automatically if user is authenticated
+        if (currentUser && currentUser.username) {
+            const placeData = {
+                id: place.id,
+                name: place.title,
+                lat: place.lat,
+                lng: place.lng
+            };
+            // eslint-disable-next-line no-undef
+            trackVisit(currentUser.username, placeData);
+            // Update the visited button text to reflect new count
+            updateVisitedButtonText();
+        }
     }
 
     closeModal.addEventListener('click', () => {
@@ -267,13 +356,57 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.target === mapModal) {
             mapModal.style.display = 'none';
         }
-    });
-
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && mapModal.style.display === 'block') {
-            mapModal.style.display = 'none';
+        if (e.target === visitedModal) {
+            visitedModal.style.display = 'none';
         }
     });
 
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            if (mapModal.style.display === 'block') {
+                mapModal.style.display = 'none';
+            }
+            if (visitedModal && visitedModal.style.display === 'block') {
+                visitedModal.style.display = 'none';
+            }
+        }
+    });
+
+    const visitedModal = document.getElementById('visitedModal');
+    const closeVisited = document.getElementById('closeVisited');
+
+    closeVisited.addEventListener('click', () => {
+        visitedModal.style.display = 'none';
+    });
+
+    function showVisitedPlaces() {
+        const visitedList = document.getElementById('visitedList');
+        // eslint-disable-next-line no-undef
+        const visitedPlaces = getVisited(currentUser.username);
+
+        visitedList.innerHTML = ''; // Clear existing list
+
+        if (visitedPlaces.length > 0) {
+            visitedPlaces.forEach(place => {
+                const li = document.createElement('li');
+                const formattedDate = new Date(place.ts).toLocaleString();
+                li.innerHTML = `${place.name} - ${formattedDate} <a href="#" class="view-on-map" data-lat="${place.lat}" data-lng="${place.lng}" data-title="${place.name}">Ver en mapa</a>`;
+                li.querySelector('.view-on-map').addEventListener('click', (e) => {
+                    e.preventDefault();
+                    visitedModal.style.display = 'none'; // Close this modal
+                    showMap({lat: place.lat, lng: place.lng, title: place.name, id: place.id});
+                });
+                visitedList.appendChild(li);
+            });
+        } else {
+            visitedList.innerHTML = '<li>No has visitado ningún lugar todavía.</li>';
+        }
+
+        visitedModal.style.display = 'block';
+    }
+
     displayRecommendations(places);
+    
+    // Expose displayRecommendations globally for logout function
+    window.displayRecommendations = displayRecommendations;
 });

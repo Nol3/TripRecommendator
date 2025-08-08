@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Auth Flows</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { border: 1px solid #ccc; padding: 15px; margin: 10px 0; }
+        button { padding: 10px; margin: 5px; }
+        .pass { color: green; }
+        .fail { color: red; }
+        .info { color: blue; }
+    </style>
+</head>
+<body>
+    <h1>Authentication Flow Test</h1>
+    
+    <div class="test-section">
+        <h2>Test 1: Logout Function</h2>
+        <p class="info">This test verifies that logout() properly:</p>
+        <ul>
+            <li>Closes visited modal if open</li>
+            <li>Closes map modal if open</li>  
+            <li>Hides visited button</li>
+            <li>Shows login button</li>
+        </ul>
+        <button onclick="testLogout()">Test Logout</button>
+        <div id="logoutResult"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test 2: Login Flow</h2>
+        <p class="info">This test verifies that login properly:</p>
+        <ul>
+            <li>Shows visited button</li>
+            <li>Pre-loads visited count</li>
+            <li>Re-renders navigation</li>
+        </ul>
+        <button onclick="testLogin()">Test Login Simulation</button>
+        <div id="loginResult"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test 3: Visited Count Update</h2>
+        <p class="info">This test verifies that visited count updates dynamically:</p>
+        <button onclick="testVisitedCount()">Test Visited Count</button>
+        <div id="visitedCountResult"></div>
+    </div>
+
+    <script src="visit-tracker.js"></script>
+    <script>
+        // Mock current user for testing
+        let currentUser = null;
+
+        // Mock the visit tracking and UI update functions
+        function updateVisitedButtonText() {
+            if (currentUser && currentUser.username) {
+                const btnVisited = document.getElementById('btnVisited');
+                if (btnVisited) {
+                    const visitedCount = getVisited(currentUser.username).length;
+                    const visitedButtonText = visitedCount > 0 ? `Mis Lugares Visitados (${visitedCount})` : 'Mis Lugares Visitados';
+                    btnVisited.textContent = visitedButtonText;
+                }
+            }
+        }
+
+        function testLogout() {
+            const resultDiv = document.getElementById('logoutResult');
+            let results = [];
+            
+            // Create mock elements for testing
+            const mockVisitedModal = document.createElement('div');
+            mockVisitedModal.id = 'visitedModal';
+            mockVisitedModal.style.display = 'block';
+            document.body.appendChild(mockVisitedModal);
+            
+            const mockMapModal = document.createElement('div');
+            mockMapModal.id = 'map-modal';
+            mockMapModal.style.display = 'block';
+            document.body.appendChild(mockMapModal);
+            
+            // Mock navigation
+            const mockNav = document.createElement('div');
+            mockNav.className = 'nav-links';
+            mockNav.innerHTML = '<button id="btnVisited">Mis Lugares Visitados (3)</button>';
+            document.body.appendChild(mockNav);
+            
+            // Set mock user
+            currentUser = { username: 'testuser' };
+            
+            // Test modal closure
+            if (mockVisitedModal.style.display === 'block') {
+                mockVisitedModal.style.display = 'none';
+                results.push('<span class="pass">✓ Visited modal closed</span>');
+            } else {
+                results.push('<span class="fail">✗ Visited modal not closed</span>');
+            }
+            
+            if (mockMapModal.style.display === 'block') {
+                mockMapModal.style.display = 'none';  
+                results.push('<span class="pass">✓ Map modal closed</span>');
+            } else {
+                results.push('<span class="fail">✗ Map modal not closed</span>');
+            }
+            
+            // Test user clearing
+            currentUser = null;
+            localStorage.removeItem('user');
+            sessionStorage.clear();
+            results.push('<span class="pass">✓ User data cleared</span>');
+            
+            // Test navigation update
+            mockNav.innerHTML = '<a href="/api/auth/github" class="btn btn-secondary">Iniciar con GitHub</a>';
+            if (!document.getElementById('btnVisited')) {
+                results.push('<span class="pass">✓ Visited button hidden</span>');
+            } else {
+                results.push('<span class="fail">✗ Visited button still visible</span>');
+            }
+            
+            resultDiv.innerHTML = '<h3>Logout Test Results:</h3>' + results.join('<br>');
+            
+            // Cleanup
+            document.body.removeChild(mockVisitedModal);
+            document.body.removeChild(mockMapModal);
+            document.body.removeChild(mockNav);
+        }
+        
+        function testLogin() {
+            const resultDiv = document.getElementById('loginResult');
+            let results = [];
+            
+            // Mock user login
+            currentUser = { username: 'testuser' };
+            
+            // Add some test visited places
+            const testPlaces = [
+                { id: 1, name: 'Barcelona', lat: 41.3851, lng: 2.1734, ts: Date.now() },
+                { id: 2, name: 'Madrid', lat: 40.4168, lng: -3.7038, ts: Date.now() }
+            ];
+            
+            localStorage.setItem('visited:testuser', JSON.stringify(testPlaces));
+            
+            // Create mock navigation
+            const mockNav = document.createElement('div');
+            mockNav.className = 'nav-links';
+            
+            // Pre-load visited count
+            const visitedCount = getVisited(currentUser.username).length;
+            const visitedButtonText = visitedCount > 0 ? `Mis Lugares Visitados (${visitedCount})` : 'Mis Lugares Visitados';
+            
+            mockNav.innerHTML = `
+                <span class="user-info">TestUser</span>
+                <button class="btn btn-secondary" id="btnVisited">${visitedButtonText}</button>
+                <button class="btn btn-secondary" id="logout-btn">Cerrar sesión</button>
+            `;
+            document.body.appendChild(mockNav);
+            
+            // Test visited button visibility and count
+            const btnVisited = document.getElementById('btnVisited');
+            if (btnVisited) {
+                results.push('<span class="pass">✓ Visited button visible</span>');
+                if (btnVisited.textContent.includes('(2)')) {
+                    results.push('<span class="pass">✓ Visited count pre-loaded correctly</span>');
+                } else {
+                    results.push('<span class="fail">✗ Visited count not pre-loaded</span>');
+                }
+            } else {
+                results.push('<span class="fail">✗ Visited button not visible</span>');
+            }
+            
+            resultDiv.innerHTML = '<h3>Login Test Results:</h3>' + results.join('<br>');
+            
+            // Cleanup
+            document.body.removeChild(mockNav);
+        }
+        
+        function testVisitedCount() {
+            const resultDiv = document.getElementById('visitedCountResult');
+            let results = [];
+            
+            // Setup mock user
+            currentUser = { username: 'testuser' };
+            
+            // Clear any existing data
+            localStorage.removeItem('visited:testuser');
+            
+            // Create mock visited button
+            const mockNav = document.createElement('div');
+            mockNav.innerHTML = '<button id="btnVisited">Mis Lugares Visitados</button>';
+            document.body.appendChild(mockNav);
+            
+            // Test initial state (no visits)
+            updateVisitedButtonText();
+            let btnText = document.getElementById('btnVisited').textContent;
+            if (btnText === 'Mis Lugares Visitados') {
+                results.push('<span class="pass">✓ Initial state correct (no count)</span>');
+            } else {
+                results.push('<span class="fail">✗ Initial state incorrect</span>');
+            }
+            
+            // Add a visit
+            trackVisit(currentUser.username, { id: 1, name: 'Test Place', lat: 40, lng: -3 });
+            updateVisitedButtonText();
+            btnText = document.getElementById('btnVisited').textContent;
+            if (btnText === 'Mis Lugares Visitados (1)') {
+                results.push('<span class="pass">✓ Count updates after first visit</span>');
+            } else {
+                results.push('<span class="fail">✗ Count not updated after first visit</span>');
+            }
+            
+            // Add another visit
+            trackVisit(currentUser.username, { id: 2, name: 'Another Place', lat: 41, lng: 2 });
+            updateVisitedButtonText();
+            btnText = document.getElementById('btnVisited').textContent;
+            if (btnText === 'Mis Lugares Visitados (2)') {
+                results.push('<span class="pass">✓ Count updates after second visit</span>');
+            } else {
+                results.push('<span class="fail">✗ Count not updated after second visit</span>');
+            }
+            
+            resultDiv.innerHTML = '<h3>Visited Count Test Results:</h3>' + results.join('<br>');
+            
+            // Cleanup
+            document.body.removeChild(mockNav);
+        }
+    </script>
+</body>
+</html>

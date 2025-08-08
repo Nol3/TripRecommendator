@@ -56,12 +56,13 @@ passport.deserializeUser((user, done) => done(null, user));
 const recommendationService = new RecommendationService(process.env.GEMINI_API_KEY);
 console.log('✅ Servicio de recomendaciones inicializado');
 
-const isAuthenticated = (req, res, next) => {
-    if (req.isAuthenticated()) {
-        return next();
-    }
-    res.status(401).json({ error: 'No autenticado' });
-};
+// Authentication middleware (currently unused but kept for future use)
+// const isAuthenticated = (req, res, next) => {
+//     if (req.isAuthenticated()) {
+//         return next();
+//     }
+//     res.status(401).json({ error: 'No autenticado' });
+// };
 
 app.get('/api/auth/status', (req, res) => {
     const authCookie = req.cookies?.auth;
@@ -114,7 +115,7 @@ app.get('/api/debug/env', (req, res) => {
         GEMINI_API_KEY: process.env.GEMINI_API_KEY ? 'Configurado' : 'No configurado',
         UNSPLASH_ACCESS_KEY: process.env.UNSPLASH_ACCESS_KEY ? 'Configurado' : 'No configurado',
         CALLBACK_URL: process.env.CALLBACK_URL,
-        genAI_initialized: genAI ? 'Sí' : 'No'
+        recommendationService_initialized: recommendationService ? 'Sí' : 'No'
     });
 });
 
