@@ -66,11 +66,11 @@ http://localhost:3000
 4. Agrega las siguientes variables:
 
 ```
-GITHUB_CLIENT_ID=Ov23li3lclshVeQnyzho
-GITHUB_CLIENT_SECRET=a50172b79771d5108132553a720dff43ff52e109
-CALLBACK_URL=https://trip-recommendator-two.vercel.app/api/auth/github-callback
-GEMINI_API_KEY=AIzaSyAL-fkTX_48826c5bp-lUdY_07cW7Kr_-4
-UNSPLASH_ACCESS_KEY=rkpTC02QxlS6SQ1bDlx7TuRohlMsluqH4ewBMCHQ_Fg
+GITHUB_CLIENT_ID=
+GITHUB_CLIENT_SECRET=
+CALLBACK_URL=
+GEMINI_API_KEY=
+UNSPLASH_ACCESS_KEY=
 NODE_ENV=production
 ```
 
