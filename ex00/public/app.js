@@ -1,6 +1,43 @@
 // Global variable to track current authenticated user
 let currentUser = null;
 
+/**
+ * Visit Tracking Utility Functions
+ * Helper functions for tracking user visits to places using localStorage
+ */
+
+/**
+ * Retrieves the list of visited places for a specific username
+ * @param {string} username - The username to get visits for
+ * @returns {Array} Array of visited place objects
+ */
+function getVisited(username) {
+    return JSON.parse(localStorage.getItem('visited:' + username) || '[]');
+}
+
+/**
+ * Saves the visited places array to localStorage for a specific username
+ * @param {string} username - The username to save visits for
+ * @param {Array} arr - Array of visited place objects to save
+ */
+function saveVisited(username, arr) {
+    localStorage.setItem('visited:' + username, JSON.stringify(arr));
+}
+
+/**
+ * Tracks a visit to a place for a specific username
+ * Avoids duplicate entries by checking if the place ID already exists
+ * @param {string} username - The username to track the visit for
+ * @param {Object} placeObj - The place object to track (must have an 'id' property)
+ */
+function trackVisit(username, placeObj) {
+    const list = getVisited(username);
+    if (!list.find(p => p.id === placeObj.id)) {   // avoid duplicates
+        list.push({...placeObj, ts: Date.now()});
+        saveVisited(username, list);
+    }
+}
+
 // Default places data available globally
 const defaultPlaces = [
     { id: 1, title: 'Barcelona', description: 'Ciudad cosmopolita con arquitectura única', image: './assets/barcelona.jpg', rating: 4.8, lat: 41.3851, lng: 2.1734 },
@@ -36,7 +73,6 @@ function updateVisitedButtonText() {
     if (currentUser && currentUser.username) {
         const btnVisited = document.getElementById('btnVisited');
         if (btnVisited) {
-            // eslint-disable-next-line no-undef
             const visitedCount = getVisited(currentUser.username).length;
             const visitedButtonText = visitedCount > 0 ? `Mis Lugares Visitados (${visitedCount})` : 'Mis Lugares Visitados';
             btnVisited.textContent = visitedButtonText;
@@ -159,7 +195,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 };
                 
                 // Pre-load visited list length for UI enhancement
-                // eslint-disable-next-line no-undef
                 const visitedCount = getVisited(currentUser.username).length;
                 const visitedButtonText = visitedCount > 0 ? `Mis Lugares Visitados (${visitedCount})` : 'Mis Lugares Visitados';
                 
@@ -208,7 +243,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 };
                 
                 // Pre-load visited list length for UI enhancement
-                // eslint-disable-next-line no-undef
                 const visitedCount = getVisited(currentUser.username).length;
                 const visitedButtonText = visitedCount > 0 ? `Mis Lugares Visitados (${visitedCount})` : 'Mis Lugares Visitados';
                 
@@ -341,7 +375,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 lat: place.lat,
                 lng: place.lng
             };
-            // eslint-disable-next-line no-undef
             trackVisit(currentUser.username, placeData);
             // Update the visited button text to reflect new count
             updateVisitedButtonText();
@@ -381,7 +414,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function showVisitedPlaces() {
         const visitedList = document.getElementById('visitedList');
-        // eslint-disable-next-line no-undef
         const visitedPlaces = getVisited(currentUser.username);
 
         visitedList.innerHTML = ''; // Clear existing list
