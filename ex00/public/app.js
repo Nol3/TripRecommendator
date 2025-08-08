@@ -83,7 +83,7 @@ function updateVisitedButtonText() {
 // Reusable logout function at top-level scope
 function logout() {
     console.log('🚪 Intentando cerrar sesión...');
-    
+
     // Close any open modals before logging out
     const visitedModal = document.getElementById('visitedModal');
     const mapModal = document.getElementById('map-modal');
@@ -95,15 +95,15 @@ function logout() {
         mapModal.style.display = 'none';
         console.log('✅ Map modal closed during logout');
     }
-    
+
     // Clear current user and auth tokens/session data
     currentUser = null;
     localStorage.removeItem('user');
     sessionStorage.clear();
-    
+
     // Update UI (hide auth-only buttons, show "Login with GitHub")
     updateNavForLoggedOutState();
-    
+
     // Perform logout API call
     fetch('/api/auth/logout')
         .then(response => {
@@ -193,11 +193,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 currentUser = {
                     username: user.login || user.username || user.name
                 };
-                
+
                 // Pre-load visited list length for UI enhancement
                 const visitedCount = getVisited(currentUser.username).length;
                 const visitedButtonText = visitedCount > 0 ? `Mis Lugares Visitados (${visitedCount})` : 'Mis Lugares Visitados';
-                
+
                 const navLinks = document.querySelector('.nav-links');
                 navLinks.innerHTML = `
                     <span class="user-info">
@@ -205,7 +205,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         ${user.name || user.login}
                     </span>
                     <button class="btn btn-secondary" id="btnVisited">${visitedButtonText}</button>
-                    <button class="btn btn-secondary" id="logout-btn">Cerrar sesión</button>
+                    <button class="btn btn-secondary" id="logout-btn"></button>
                 `;
                 searchForm.style.display = 'flex';
                 window.history.replaceState({}, document.title, '/');
@@ -241,11 +241,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 currentUser = {
                     username: data.user?.username || data.user?.displayName || data.user?.login || 'Usuario'
                 };
-                
+
                 // Pre-load visited list length for UI enhancement
                 const visitedCount = getVisited(currentUser.username).length;
                 const visitedButtonText = visitedCount > 0 ? `Mis Lugares Visitados (${visitedCount})` : 'Mis Lugares Visitados';
-                
+
                 navLinks.innerHTML = `
                     <span class="user-info">
                         ${data.user?.photo ? `<img src="${data.user.photo}" alt="Profile" class="profile-pic">` : ''}
@@ -366,7 +366,7 @@ document.addEventListener('DOMContentLoaded', () => {
         L.marker([place.lat, place.lng]).addTo(map)
             .bindPopup(place.title)
             .openPopup();
-        
+
         // Track visit automatically if user is authenticated
         if (currentUser && currentUser.username) {
             const placeData = {
@@ -438,7 +438,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     displayRecommendations(places);
-    
+
     // Expose displayRecommendations globally for logout function
     window.displayRecommendations = displayRecommendations;
 });
