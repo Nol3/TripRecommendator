@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__plugin_claude-mem_mcp-search__smart_outline",
+      "mcp__plugin_claude-mem_mcp-search__get_observations",
+      "Bash(node -e \"require\\('dotenv'\\).config\\(\\); process.env.SESSION_SECRET='test'; require\\('./server.js'\\)\")",
+      "Bash(curl -s http://localhost:3000/api/auth/status)",
+      "Bash(kill %1)"
+    ]
+  }
+}

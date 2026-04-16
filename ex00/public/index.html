@@ -3,64 +3,105 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TripRecommendator - Descubre tu próximo destino</title>
-    <link rel="stylesheet" href="styles.css?v=1.0.1">
-    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <title>TripRecommendator — Descubre tu próximo destino</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="styles.css?v=2.0.0">
 </head>
 <body>
-    <header role="banner">
-        <nav role="navigation" aria-label="Navegación principal">
+
+    <header>
+        <nav>
             <div class="logo">
-                <img src="assets/logo.svg" alt="TripRecommendator Logo" width="40" height="40">
+                <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="14" cy="14" r="14" fill="url(#logoGrad)"/>
+                    <path d="M14 6C10.69 6 8 8.69 8 12c0 4.5 6 10 6 10s6-5.5 6-10c0-3.31-2.69-6-6-6zm0 8.5c-1.38 0-2.5-1.12-2.5-2.5S12.62 9.5 14 9.5s2.5 1.12 2.5 2.5S15.38 14.5 14 14.5z" fill="white"/>
+                    <defs>
+                        <linearGradient id="logoGrad" x1="0" y1="0" x2="28" y2="28">
+                            <stop offset="0%" stop-color="#7c3aed"/>
+                            <stop offset="100%" stop-color="#2563eb"/>
+                        </linearGradient>
+                    </defs>
+                </svg>
                 <span class="logo-text">TripRecommendator</span>
             </div>
             <div class="nav-links">
-                <a href="/api/auth/github" class="btn btn-secondary">
-                    <img src="assets/github.svg" alt="GitHub" width="15" height="15">
-                    Iniciar sesion
+                <a href="/api/auth/github" class="btn btn-github" id="login-btn">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+                    </svg>
+                    Iniciar sesión
                 </a>
             </div>
         </nav>
     </header>
 
-    <main role="main">
-        <section class="hero" aria-labelledby="main-heading">
-            <h1 id="main-heading">Descubre tu próximo destino</h1>
-            <p>Realiza tus busquedas o logueate con tu cuenta de GitHub para guardar tus destinos favoritos</p>
+    <main>
+        <section class="hero">
+            <div class="hero-badge">✈️ Descubre el mundo</div>
+            <h1>Tu próximo destino<br><span class="gradient-text">te está esperando</span></h1>
+            <p>Busca cualquier ciudad y obtén recomendaciones personalizadas con IA</p>
+
             <form id="search-form" role="search">
                 <div class="search-container">
+                    <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                    </svg>
                     <input type="text"
                            id="search-input"
-                           placeholder="¿Qué tipo de destino estás buscando?"
-                           aria-label="Buscar destino">
-                    <button type="submit" class="btn" aria-label="Buscar destinos">
-                        Buscar
+                           placeholder="¿A dónde quieres ir? Ej: Tokio, Roma, Nueva York..."
+                           aria-label="Buscar destino"
+                           autocomplete="off">
+                    <button type="submit" class="btn btn-search">
+                        <span>Buscar</span>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <path d="M5 12h14M12 5l7 7-7 7"/>
+                        </svg>
                     </button>
                 </div>
             </form>
+
+            <div class="category-filters" id="category-filters">
+                <button class="filter-chip active" data-category="">Todos</button>
+                <button class="filter-chip" data-category="cultura">🎨 Cultura</button>
+                <button class="filter-chip" data-category="gastronomía">🍽️ Gastronomía</button>
+                <button class="filter-chip" data-category="naturaleza">🌿 Naturaleza</button>
+                <button class="filter-chip" data-category="historia">🏛️ Historia</button>
+                <button class="filter-chip" data-category="ocio">🎉 Ocio</button>
+            </div>
         </section>
 
-        <section id="recommendations" class="recommendations" aria-label="Recomendaciones de destinos">
-        </section>
+        <section id="recommendations" class="recommendations" aria-label="Recomendaciones"></section>
     </main>
 
     <div id="map-modal" class="modal" role="dialog" aria-labelledby="modal-title">
-        <div class="modal-content">
-            <button class="close" aria-label="Cerrar mapa">&times;</button>
-            <h2 id="modal-title"></h2>
+        <div class="modal-content modal-map">
+            <div class="modal-header">
+                <h2 id="modal-title"></h2>
+                <button class="close-btn" aria-label="Cerrar">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 6 6 18M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
             <div id="map" role="application" aria-label="Mapa interactivo"></div>
         </div>
     </div>
 
-    <div id="visitedModal" class="modal">
-        <div class="modal-content">
-            <span id="closeVisited" class="close">×</span>
-            <h2>Mis Lugares Visitados</h2>
+    <div id="visitedModal" class="modal" role="dialog">
+        <div class="modal-content modal-visited">
+            <div class="modal-header">
+                <h2>Mis lugares visitados</h2>
+                <button class="close-btn" id="closeVisited" aria-label="Cerrar">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 6 6 18M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
             <ul id="visitedList"></ul>
         </div>
     </div>
 
-    <script src="app.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="app.js?v=2.0.0"></script>
 </body>
 </html>

@@ -1,124 +1,115 @@
 const { searchPlacesByCity, getRandomPlaces } = require('../data/places');
 const { getCoordinates, generatePlacesFromCoordinates } = require('./geocoding');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
+const cache = require('./cache');
+
+const CATEGORIES = ['cultura', 'gastronomía', 'naturaleza', 'historia', 'ocio'];
 
 class RecommendationService {
     constructor(geminiApiKey = null) {
         this.genAI = geminiApiKey ? new GoogleGenerativeAI(geminiApiKey) : null;
     }
 
-    async getRecommendations(query) {
-        console.log('🔍 Buscando recomendaciones para:', query);
+    async getRecommendations(query, category = null) {
+        const cacheKey = `${query.toLowerCase()}:${category || 'all'}`;
+        const cached = cache.get(cacheKey);
+        if (cached) {
+            console.log('✅ Cache hit:', cacheKey);
+            return cached;
+        }
 
-        // 1. Intentar buscar en la base de datos local
+        let results = await this._fetchRecommendations(query);
+
+        if (category && results) {
+            results = results.filter(p =>
+                !p.category || p.category.toLowerCase().includes(category.toLowerCase())
+            );
+        }
+
+        if (results && results.length > 0) {
+            cache.set(cacheKey, results);
+        }
+
+        return results;
+    }
+
+    async _fetchRecommendations(query) {
         const localResults = searchPlacesByCity(query);
         if (localResults) {
-            console.log('✅ Encontrados en base de datos local');
+            console.log('✅ Local DB hit');
             return localResults;
         }
 
-        // 2. Intentar geocoding para lugares desconocidos
-        console.log('🌍 Intentando geocoding...');
+        console.log('🌍 Geocoding...');
         const coordinates = await getCoordinates(query);
         if (coordinates) {
-            console.log('✅ Coordenadas obtenidas:', coordinates);
-            const generatedPlaces = await generatePlacesFromCoordinates(query, coordinates);
-            return generatedPlaces;
+            return generatePlacesFromCoordinates(query, coordinates);
         }
 
-        // 3. Intentar con Gemini si está disponible
         if (this.genAI) {
-            console.log('🤖 Intentando con Gemini...');
+            console.log('🤖 Trying Gemini...');
             try {
-                const geminiResults = await this.getGeminiRecommendations(query);
-                if (geminiResults) {
-                    return geminiResults;
-                }
-            } catch (error) {
-                console.log('❌ Error con Gemini:', error.message);
+                const results = await this._geminiRecommendations(query);
+                if (results) return results;
+            } catch (err) {
+                console.error('Gemini error:', err.message);
             }
         }
 
-        // 4. Fallback: lugares aleatorios
-        console.log('🎲 Usando lugares aleatorios como fallback');
+        console.log('🎲 Fallback: random places');
         return getRandomPlaces();
     }
 
-    async getGeminiRecommendations(query) {
-        try {
-            const model = this.genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+    async _geminiRecommendations(query) {
+        const model = this.genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
 
-            const prompt = `Como experto en viajes, recomiéndame 3 lugares específicos para visitar en: ${query}
-                           Responde ÚNICAMENTE en formato JSON válido como este ejemplo:
-                           [
-                             {
-                               "id": 1,
-                               "title": "Nombre del lugar",
-                               "description": "Breve descripción del lugar (máximo 150 caracteres)",
-                               "rating": 4.5,
-                               "lat": 41.3851,
-                               "lng": 2.1734
-                             }
-                           ]
-                           Incluye exactamente 3 lugares. Asegúrate de que las coordenadas sean precisas.
-                           IMPORTANTE: Responde SOLO con el JSON válido, sin texto adicional, sin markdown, sin explicaciones.`;
+        const prompt = `Eres un experto en viajes. Recomienda 6 lugares específicos para visitar en: "${query}"
+Responde ÚNICAMENTE con JSON válido, sin markdown ni texto extra:
+[
+  {
+    "id": 1,
+    "title": "Nombre del lugar",
+    "description": "Descripción breve (máx 150 caracteres)",
+    "rating": 4.5,
+    "lat": 41.3851,
+    "lng": 2.1734,
+    "category": "cultura"
+  }
+]
+Categorías válidas: ${CATEGORIES.join(', ')}.
+Exactamente 6 lugares con coordenadas precisas.`;
 
-            const result = await model.generateContent(prompt);
-            const response = await result.response;
-            const text = response.text();
+        const result = await model.generateContent(prompt);
+        const text = result.response.text().trim()
+            .replace(/^```json\n?/, '').replace(/^```\n?/, '').replace(/```\n?$/, '');
 
-            // Limpiar la respuesta de Gemini
-            let cleanText = text.trim();
-            if (cleanText.startsWith('```json')) {
-                cleanText = cleanText.replace(/```json\n?/, '').replace(/```\n?/, '');
-            } else if (cleanText.startsWith('```')) {
-                cleanText = cleanText.replace(/```\n?/, '').replace(/```\n?/, '');
-            }
-
-            const jsonData = JSON.parse(cleanText);
-            return jsonData;
-
-        } catch (error) {
-            console.error('Error con Gemini:', error);
-            return null;
-        }
+        return JSON.parse(text);
     }
 
     async addImagesToPlaces(places) {
         if (!places || places.length === 0) return places;
 
-        const processedPlaces = await Promise.all(places.map(async (place) => {
+        return Promise.all(places.map(async (place) => {
             try {
-                const unsplashResponse = await fetch(
-                    `https://api.unsplash.com/search/photos?query=${encodeURIComponent(place.title)}&client_id=${process.env.UNSPLASH_ACCESS_KEY}`,
-                    {
-                        headers: {
-                            'Accept-Version': 'v1'
-                        }
-                    }
+                const res = await fetch(
+                    `https://api.unsplash.com/search/photos?query=${encodeURIComponent(place.title)}&per_page=1&client_id=${process.env.UNSPLASH_ACCESS_KEY}`,
+                    { headers: { 'Accept-Version': 'v1' } }
                 );
 
-                if (!unsplashResponse.ok) {
-                    throw new Error('Error fetching from Unsplash');
-                }
+                if (!res.ok) throw new Error(`Unsplash ${res.status}`);
 
-                const unsplashData = await unsplashResponse.json();
-                const imageUrl = unsplashData.results[0]?.urls?.regular;
+                const data = await res.json();
+                const imageUrl = data.results?.[0]?.urls?.regular;
 
-                return {
-                    ...place,
-                    image: imageUrl || `https://source.unsplash.com/800x600/?${encodeURIComponent(place.title)}`
-                };
-            } catch (error) {
-                console.error('Error fetching image for:', place.title, error);
-                return {
-                    ...place,
-                    image: `https://source.unsplash.com/800x600/?${encodeURIComponent(place.title)}`
-                };
+                return { ...place, image: imageUrl || this._fallbackImage(place.title) };
+            } catch {
+                return { ...place, image: this._fallbackImage(place.title) };
             }
         }));
+    }
 
-        return processedPlaces;
+    _fallbackImage(title) {
+        return `https://picsum.photos/seed/${encodeURIComponent(title)}/800/500`;
     }
 }
 
