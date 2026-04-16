@@ -276,13 +276,25 @@ function closeAllModals() {
 }
 
 // ─── Search ───────────────────────────────────────────
+function getSearchContext() {
+    const season       = document.getElementById('ctx-season')?.value || undefined;
+    const duration     = document.getElementById('ctx-duration')?.value || undefined;
+    const travelerType = document.getElementById('ctx-traveler')?.value || undefined;
+    const ctx = {};
+    if (season)       ctx.season = season;
+    if (duration)     ctx.duration = duration;
+    if (travelerType) ctx.travelerType = travelerType;
+    return Object.keys(ctx).length ? ctx : undefined;
+}
+
 async function searchPlaces(query) {
     showSkeletons(6);
     try {
+        const context = getSearchContext();
         const res = await fetch('/api/search', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ query, category: activeCategory || undefined })
+            body: JSON.stringify({ query, category: activeCategory || undefined, context })
         });
 
         if (!res.ok) {
@@ -340,6 +352,23 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!query) return;
         const results = await searchPlaces(query);
         if (results.length > 0) displayRecommendations(results, query);
+    });
+
+    // Context bar toggle
+    const ctxToggle = document.getElementById('context-toggle');
+    const ctxSelectors = document.getElementById('context-selectors');
+    ctxToggle.addEventListener('click', () => {
+        const open = ctxSelectors.classList.toggle('hidden');
+        ctxToggle.classList.toggle('active', !open);
+        if (!open) ctxToggle.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg> Ocultar opciones`;
+        else       ctxToggle.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Personalizar búsqueda`;
+    });
+
+    // Highlight selects when a value is chosen
+    document.getElementById('context-selectors').addEventListener('change', (e) => {
+        if (e.target.classList.contains('ctx-select')) {
+            e.target.classList.toggle('has-value', !!e.target.value);
+        }
     });
 
     // Category filters

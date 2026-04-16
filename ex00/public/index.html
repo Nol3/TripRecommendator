@@ -60,6 +60,38 @@
                 </div>
             </form>
 
+            <div class="context-bar" id="context-bar">
+                <button class="context-toggle" id="context-toggle" type="button">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+                    Personalizar búsqueda
+                </button>
+                <div class="context-selectors hidden" id="context-selectors">
+                    <select id="ctx-season" class="ctx-select">
+                        <option value="">🗓 Época del año</option>
+                        <option value="primavera">🌸 Primavera</option>
+                        <option value="verano">☀️ Verano</option>
+                        <option value="otoño">🍂 Otoño</option>
+                        <option value="invierno">❄️ Invierno</option>
+                    </select>
+                    <select id="ctx-duration" class="ctx-select">
+                        <option value="">⏱ Duración</option>
+                        <option value="1 día">1 día</option>
+                        <option value="fin de semana">Fin de semana</option>
+                        <option value="1 semana">1 semana</option>
+                        <option value="2 semanas">2 semanas</option>
+                        <option value="1 mes">1 mes</option>
+                    </select>
+                    <select id="ctx-traveler" class="ctx-select">
+                        <option value="">👤 Tipo de viaje</option>
+                        <option value="solo">🧍 Solo</option>
+                        <option value="pareja">💑 Pareja</option>
+                        <option value="familia">👨‍👩‍👧 Familia</option>
+                        <option value="amigos">👯 Amigos</option>
+                        <option value="mochilero">🎒 Mochilero</option>
+                    </select>
+                </div>
+            </div>
+
             <div class="category-filters" id="category-filters">
                 <button class="filter-chip active" data-category="">Todos</button>
                 <button class="filter-chip" data-category="cultura">🎨 Cultura</button>

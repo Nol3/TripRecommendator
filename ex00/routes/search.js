@@ -35,7 +35,7 @@ function withTimeout(promise, ms) {
 }
 
 router.post('/', rateLimit, async (req, res) => {
-    const { query, category } = req.body;
+    const { query, category, context = {} } = req.body;
 
     if (!query || typeof query !== 'string' || query.trim().length === 0) {
         return res.status(400).json({ error: 'Query is required' });
@@ -44,8 +44,14 @@ router.post('/', rateLimit, async (req, res) => {
     const sanitizedQuery = query.trim().slice(0, 200);
 
     try {
+        const safeContext = {
+            season:       ['primavera','verano','otoño','invierno'].includes(context.season) ? context.season : undefined,
+            duration:     ['1 día','fin de semana','1 semana','2 semanas','1 mes'].includes(context.duration) ? context.duration : undefined,
+            travelerType: ['solo','pareja','familia','amigos','mochilero'].includes(context.travelerType) ? context.travelerType : undefined,
+        };
+
         const places = await withTimeout(
-            recommendationService.getRecommendations(sanitizedQuery, category),
+            recommendationService.getRecommendations(sanitizedQuery, category, safeContext),
             20000
         );
 

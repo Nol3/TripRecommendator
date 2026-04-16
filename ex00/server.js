@@ -8,6 +8,7 @@ const path = require('path');
 
 const authRouter = require('./routes/auth');
 const searchRouter = require('./routes/search');
+const { warmupCache } = require('./services/warmup');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -53,4 +54,8 @@ app.use('/api/search', searchRouter);
 
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);
+    // Fire-and-forget: warm cache without blocking startup
+    warmupCache(process.env.GEMINI_API_KEY).catch(err =>
+        console.error('Warmup error:', err.message)
+    );
 });
