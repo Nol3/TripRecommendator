@@ -9,7 +9,21 @@
       "Bash(node -e ' *)",
       "Bash(SESSION_SECRET=test node server.js)",
       "Bash(curl -s -X POST http://localhost:3000/api/search -H 'Content-Type: application/json' -d '{\"query\":\"Málaga\"}')",
-      "Bash(node -e \" const d=[];process.stdin.on\\('data',c=>d.push\\(c\\)\\);process.stdin.on\\('end',\\(\\)=>{ const places=JSON.parse\\(Buffer.concat\\(d\\).toString\\(\\)\\); places.forEach\\(p=>console.log\\(\\\\`[\\\\${p.category}] \\\\${p.title} → \\\\${p.lat?.toFixed\\(4\\)},\\\\${p.lng?.toFixed\\(4\\)}\\\\`\\)\\); }\\); \")"
+      "Bash(node -e \" const d=[];process.stdin.on\\('data',c=>d.push\\(c\\)\\);process.stdin.on\\('end',\\(\\)=>{ const places=JSON.parse\\(Buffer.concat\\(d\\).toString\\(\\)\\); places.forEach\\(p=>console.log\\(\\\\`[\\\\${p.category}] \\\\${p.title} → \\\\${p.lat?.toFixed\\(4\\)},\\\\${p.lng?.toFixed\\(4\\)}\\\\`\\)\\); }\\); \")",
+      "Bash(grep -v \"^$\")",
+      "Bash(SESSION_SECRET=test GEMINI_API_KEY=AIzaSyAL-fkTX_48826c5bp-lUdY_07cW7Kr_-4 UNSPLASH_ACCESS_KEY=rkpTC02QxlS6SQ1bDlx7TuRohlMsluqH4ewBMCHQ_Fg node server.js)",
+      "Bash(curl -s -X POST http://localhost:3000/api/search -H 'Content-Type: application/json' -d '{\"query\":\"Córdoba\"}')",
+      "Bash(curl -s -X POST http://localhost:3000/api/search -H \"Content-Type: application/json\" -d '{\"query\":\"Córdoba\"}')",
+      "Bash(curl -s -X POST http://localhost:3000/api/search -H \"Content-Type: application/json\" -d '{\"query\":\"Tokio\"}')",
+      "Bash(node -e \" const d=[];process.stdin.on\\('data',c=>d.push\\(c\\)\\);process.stdin.on\\('end',\\(\\)=>{ try { const places=JSON.parse\\(Buffer.concat\\(d\\)\\); places.forEach\\(p=>console.log\\(\\\\`[\\\\${p.category}] \\\\${p.title} | img:\\\\${p.image?'✓':'✗'}\\\\`\\)\\); } catch\\(e\\) { console.log\\('Raw:', Buffer.concat\\(d\\).toString\\(\\).slice\\(0,200\\)\\); } }\\);\" kill %1)",
+      "Bash(SESSION_SECRET=test UNSPLASH_ACCESS_KEY=rkpTC02QxlS6SQ1bDlx7TuRohlMsluqH4ewBMCHQ_Fg node server.js)",
+      "Bash(curl -s -X POST http://localhost:3000/api/search -H 'Content-Type: application/json' -d '{\"query\":\"__TRACKED_VAR__\"}')",
+      "Bash(node -e \" const d=[];process.stdin.on\\('data',c=>d.push\\(c\\)\\);process.stdin.on\\('end',\\(\\)=>{ try { const places=JSON.parse\\(Buffer.concat\\(d\\)\\); places.forEach\\(p=>console.log\\(\\\\` [\\\\${p.category}] \\\\${p.title} | img:\\\\${p.image?'✓':'✗'}\\\\`\\)\\); } catch\\(e\\) { console.log\\(' Error:', Buffer.concat\\(d\\).toString\\(\\).slice\\(0,100\\)\\); } }\\);\" done kill %1)",
+      "Bash(node -e \" const d=[];process.stdin.on\\('data',c=>d.push\\(c\\)\\);process.stdin.on\\('end',\\(\\)=>{ try{const p=JSON.parse\\(Buffer.concat\\(d\\)\\);p.forEach\\(x=>console.log\\(' ['+x.category+'] '+x.title+' img:'+\\(x.image?'✓':'✗'\\)\\)\\);} catch\\(e\\){console.log\\(' ERR:'+Buffer.concat\\(d\\).toString\\(\\).slice\\(0,80\\)\\);} }\\);\" done kill %1)",
+      "Bash(node -e \" const d=[];process.stdin.on\\('data',c=>d.push\\(c\\)\\);process.stdin.on\\('end',\\(\\)=>{ const p=JSON.parse\\(Buffer.concat\\(d\\)\\); p.forEach\\(x=>console.log\\('['+x.category+'] '+x.title+' | img:'+\\(x.image?'✓':'✗'\\)\\)\\); }\\);\" kill %1)",
+      "Bash(curl -s -X POST http://localhost:3000/api/search -H 'Content-Type: application/json' -d '{\"query\":\"Madrid\"}')",
+      "Bash(curl -s -X POST http://localhost:3000/api/search -H 'Content-Type: application/json' -d '{\"query\":\"cordoba\"}')",
+      "Bash(node -e \" const d=[];process.stdin.on\\('data',c=>d.push\\(c\\)\\);process.stdin.on\\('end',\\(\\)=>{ const p=JSON.parse\\(Buffer.concat\\(d\\)\\);p.forEach\\(x=>console.log\\('['+x.category+'] '+x.title\\)\\); }\\);\" kill %1)"
     ]
   }
 }

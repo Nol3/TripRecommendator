@@ -27,6 +27,13 @@ function rateLimit(req, res, next) {
     next();
 }
 
+function withTimeout(promise, ms) {
+    return Promise.race([
+        promise,
+        new Promise((_, reject) => setTimeout(() => reject(new Error(`Timeout after ${ms}ms`)), ms))
+    ]);
+}
+
 router.post('/', rateLimit, async (req, res) => {
     const { query, category } = req.body;
 
@@ -37,17 +44,26 @@ router.post('/', rateLimit, async (req, res) => {
     const sanitizedQuery = query.trim().slice(0, 200);
 
     try {
-        const places = await recommendationService.getRecommendations(sanitizedQuery, category);
+        const places = await withTimeout(
+            recommendationService.getRecommendations(sanitizedQuery, category),
+            20000
+        );
 
         if (!places || places.length === 0) {
             return res.status(404).json({ error: 'No se encontraron recomendaciones' });
         }
 
-        const placesWithImages = await recommendationService.addImagesToPlaces(places);
+        const placesWithImages = await withTimeout(
+            recommendationService.addImagesToPlaces(places, sanitizedQuery),
+            8000
+        );
         res.json(placesWithImages);
     } catch (error) {
-        console.error('Search error:', error);
-        res.status(500).json({ error: 'Error al procesar la búsqueda', details: error.message });
+        console.error('Search error:', error.message);
+        if (error.message.includes('Timeout')) {
+            return res.status(504).json({ error: 'La búsqueda tardó demasiado. Inténtalo de nuevo.' });
+        }
+        res.status(500).json({ error: 'Error al procesar la búsqueda' });
     }
 });
 

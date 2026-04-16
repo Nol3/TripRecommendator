@@ -63,20 +63,28 @@ function descriptionFromTags(tags, name) {
 async function generatePlacesFromCoordinates(cityName, coordinates) {
     try {
         const query = buildOverpassQuery(coordinates.lat, coordinates.lng);
-        // Try primary then fallback mirror
         const endpoints = [
             'https://overpass-api.de/api/interpreter',
             'https://overpass.kumi.systems/api/interpreter'
         ];
         let res;
         for (const endpoint of endpoints) {
-            res = await fetch(endpoint, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: `data=${encodeURIComponent(query)}`
-            });
-            if (res.ok) break;
-            console.warn(`Overpass mirror ${endpoint} returned ${res.status}, trying next...`);
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), 4000);
+            try {
+                res = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `data=${encodeURIComponent(query)}`,
+                    signal: controller.signal
+                });
+                clearTimeout(timer);
+                if (res.ok) break;
+                console.warn(`Overpass ${endpoint} → ${res.status}`);
+            } catch (e) {
+                clearTimeout(timer);
+                console.warn(`Overpass ${endpoint} → ${e.message}`);
+            }
         }
 
         if (!res.ok) throw new Error(`Overpass ${res.status}`);

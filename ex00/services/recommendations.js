@@ -45,7 +45,10 @@ class RecommendationService {
         if (this.genAI) {
             console.log('🤖 Gemini...');
             try {
-                const results = await this._geminiRecommendations(query);
+                const timeout = new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error('Gemini timeout')), 9000)
+                );
+                const results = await Promise.race([this._geminiRecommendations(query), timeout]);
                 if (results && results.length > 0) return results;
             } catch (err) {
                 console.error('Gemini error:', err.message);
@@ -64,7 +67,7 @@ class RecommendationService {
     }
 
     async _geminiRecommendations(query) {
-        const model = this.genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
+        const model = this.genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
         const prompt = `Eres un experto en viajes. Recomienda 6 lugares específicos para visitar en: "${query}"
 Responde ÚNICAMENTE con JSON válido, sin markdown ni texto extra:
@@ -89,20 +92,32 @@ Exactamente 6 lugares con coordenadas precisas.`;
         return JSON.parse(text);
     }
 
-    async addImagesToPlaces(places) {
+    async addImagesToPlaces(places, cityQuery = '') {
         if (!places || places.length === 0) return places;
+        if (!process.env.UNSPLASH_ACCESS_KEY) return places.map(p => ({ ...p, image: this._fallbackImage(p.title) }));
 
         return Promise.all(places.map(async (place) => {
             try {
+                // Search with place title; if generic, append city for better results
+                const searchTerm = cityQuery
+                    ? `${place.title} ${cityQuery}`
+                    : place.title;
+
+                const controller = new AbortController();
+                const timer = setTimeout(() => controller.abort(), 4000);
+
                 const res = await fetch(
-                    `https://api.unsplash.com/search/photos?query=${encodeURIComponent(place.title)}&per_page=1&client_id=${process.env.UNSPLASH_ACCESS_KEY}`,
-                    { headers: { 'Accept-Version': 'v1' } }
+                    `https://api.unsplash.com/search/photos?query=${encodeURIComponent(searchTerm)}&per_page=3&orientation=landscape&client_id=${process.env.UNSPLASH_ACCESS_KEY}`,
+                    { headers: { 'Accept-Version': 'v1' }, signal: controller.signal }
                 );
+                clearTimeout(timer);
 
                 if (!res.ok) throw new Error(`Unsplash ${res.status}`);
 
                 const data = await res.json();
-                const imageUrl = data.results?.[0]?.urls?.regular;
+                // Pick the photo with the highest likes for quality
+                const best = data.results?.sort((a, b) => (b.likes || 0) - (a.likes || 0))[0];
+                const imageUrl = best?.urls?.regular;
 
                 return { ...place, image: imageUrl || this._fallbackImage(place.title) };
             } catch {
@@ -112,7 +127,9 @@ Exactamente 6 lugares con coordenadas precisas.`;
     }
 
     _fallbackImage(title) {
-        return `https://picsum.photos/seed/${encodeURIComponent(title)}/800/500`;
+        // Picsum with deterministic seed so the same place always gets the same image
+        const seed = title.toLowerCase().replace(/\s+/g, '-').slice(0, 30);
+        return `https://picsum.photos/seed/${seed}/800/500`;
     }
 }
 
