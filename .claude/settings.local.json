@@ -5,7 +5,11 @@
       "mcp__plugin_claude-mem_mcp-search__get_observations",
       "Bash(node -e \"require\\('dotenv'\\).config\\(\\); process.env.SESSION_SECRET='test'; require\\('./server.js'\\)\")",
       "Bash(curl -s http://localhost:3000/api/auth/status)",
-      "Bash(kill %1)"
+      "Bash(kill %1)",
+      "Bash(node -e ' *)",
+      "Bash(SESSION_SECRET=test node server.js)",
+      "Bash(curl -s -X POST http://localhost:3000/api/search -H 'Content-Type: application/json' -d '{\"query\":\"Málaga\"}')",
+      "Bash(node -e \" const d=[];process.stdin.on\\('data',c=>d.push\\(c\\)\\);process.stdin.on\\('end',\\(\\)=>{ const places=JSON.parse\\(Buffer.concat\\(d\\).toString\\(\\)\\); places.forEach\\(p=>console.log\\(\\\\`[\\\\${p.category}] \\\\${p.title} → \\\\${p.lat?.toFixed\\(4\\)},\\\\${p.lng?.toFixed\\(4\\)}\\\\`\\)\\); }\\); \")"
     ]
   }
 }

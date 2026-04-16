@@ -34,29 +34,32 @@ class RecommendationService {
     }
 
     async _fetchRecommendations(query) {
+        // 1. Local DB (instant)
         const localResults = searchPlacesByCity(query);
         if (localResults) {
             console.log('✅ Local DB hit');
             return localResults;
         }
 
-        console.log('🌍 Geocoding...');
-        const coordinates = await getCoordinates(query);
-        if (coordinates) {
-            return generatePlacesFromCoordinates(query, coordinates);
-        }
-
+        // 2. Gemini — reliable, real places with real coords
         if (this.genAI) {
-            console.log('🤖 Trying Gemini...');
+            console.log('🤖 Gemini...');
             try {
                 const results = await this._geminiRecommendations(query);
-                if (results) return results;
+                if (results && results.length > 0) return results;
             } catch (err) {
                 console.error('Gemini error:', err.message);
             }
         }
 
-        console.log('🎲 Fallback: random places');
+        // 3. Overpass via OSM geocoding (fallback when no Gemini key)
+        console.log('🌍 Overpass fallback...');
+        const coordinates = await getCoordinates(query);
+        if (coordinates) {
+            return generatePlacesFromCoordinates(query, coordinates);
+        }
+
+        console.log('🎲 Random fallback');
         return getRandomPlaces();
     }
 
